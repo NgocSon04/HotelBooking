@@ -1,0 +1,59 @@
+--tao thu muc frontend
+npx create-react-app frontend
+
+
+cd frontend
+npm install axios react-router-dom react-toastify
+
+
+--cai dat tailwind
+npm install -D tailwindcss@3 postcss autoprefixer
+npx tailwindcss init -p
+
+dựng server Node.js
+1. Mở một terminal mới (giữ nguyên terminal cũ đang chạy React), di chuyển ra thư mục gốc hotel-booking-app/ và tạo thư mục backend:
+mkdir backend
+cd backend
+npm init -y
+2. Cài đặt các thư viện cần thiết cho Backend:
+npm install express mongoose cors dotenv
+npm install --save-dev nodemon
+
+
+mongodb
+userHotel
+Hotel123456
+
+
+
+-- Cau hinh Backend
+backend/
+├── config/         # Cấu hình kết nối Database, các hằng số
+├── controllers/    # Xử lý logic nghiệp vụ (Auth, Room, Booking...)
+├── middlewares/    # Middleware kiểm tra token, phân quyền (Admin/User)
+├── models/         # Định nghĩa cấu trúc dữ liệu MongoDB (Schemas)
+├── routes/         # Định nghĩa các API endpoints
+├── .env            # Lưu biến môi trường (Bảo mật)
+└── server.js       # File chạy chính của server
+
+------User Model (models/User.js): Quản lý tài khoản (Đăng nhập, Đăng ký, Quản lý user). Phân quyền bằng trường role (Admin/Client). Cần dùng bcryptjs để mã hóa mật khẩu trước khi lưu.
+
+------Category Model (models/Category.js): Quản lý loại phòng (Standard, Deluxe, Suite...).
+
+------Room Model (models/Room.js): Thông tin chi tiết phòng (Hình ảnh, giá, mô tả, tiện ích). Tham chiếu (ref) tới bảng Category.
+
+------Booking Model (models/Booking.js): Xử lý quy trình Đặt phòng, Thanh toán và Lịch sử. Lưu trữ thông tin ngày Check-in, Check-out, tổng tiền, phương thức thanh toán, và trạng thái (Pending, Confirmed, Completed, Cancelled).
+
+
+-- Cau hinh frontend
+pages/: Chứa các trang chính của ứng dụng (ví dụ: Home.jsx, Login.jsx, RoomDetails.jsx, AdminDashboard.jsx).
+
+components/: Chứa các thành phần giao diện dùng lại nhiều lần (ví dụ: Navbar.jsx, Footer.jsx, RoomCard.jsx).
+
+services/: Chứa các file gọi API bằng axios (ví dụ: api.js, authService.js).
+
+utils/: Chứa các hàm hỗ trợ (ví dụ: format tiền tệ, format ngày tháng).
+
+
+---cài đặt các package cần thiết cho việc xử lý API, kết nối DB và xác thực bảo mật:
+npm install express mongoose cors dotenv jsonwebtoken bcryptjs
