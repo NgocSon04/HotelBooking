@@ -57,3 +57,7 @@ utils/: Chứa các hàm hỗ trợ (ví dụ: format tiền tệ, format ngày 
 
 ---cài đặt các package cần thiết cho việc xử lý API, kết nối DB và xác thực bảo mật:
 npm install express mongoose cors dotenv jsonwebtoken bcryptjs
+
+
+-- cài đặt thư viện mã hoá mật khẩu và tạo token đăng nhập
+npm install bcryptjs jsonwebtoken
