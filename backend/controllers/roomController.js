@@ -15,7 +15,7 @@ exports.createRoom = async (req, res) => {
     try {
         // Lấy toàn bộ các trường thông tin từ req.body
         const { 
-            roomName, roomType, price, status, 
+            roomName, roomType, price, quantity, 
             size, capacity, bedType, description, amenities 
         } = req.body;
         
@@ -28,7 +28,7 @@ exports.createRoom = async (req, res) => {
             roomName, 
             roomType, 
             price, 
-            status: status || 'Còntrống',
+            quantity: quantity || 5,
             size,           // Diện tích
             capacity,       // Số người
             bedType,        // Loại giường
@@ -49,12 +49,12 @@ exports.createRoom = async (req, res) => {
 exports.updateRoom = async (req, res) => {
     try {
         const { 
-            roomName, roomType, price, status, 
+            roomName, roomType, price, quantity, 
             size, capacity, bedType, description, amenities 
         } = req.body;
 
         let updateData = { 
-            roomName, roomType, price, status, 
+            roomName, roomType, price, quantity, 
             size, capacity, bedType, description, amenities 
         };
         

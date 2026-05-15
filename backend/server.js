@@ -36,6 +36,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/revenue', require('./routes/revenueRoutes'));
+app.use('/api/settings', require('./routes/settingRoutes'));
 
 
 // Route cơ bản kiểm tra server

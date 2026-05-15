@@ -1,11 +1,36 @@
 const Booking = require('../models/Booking');
+const Room = require('../models/Room');
 
 // Khách hàng đặt phòng mới
 exports.createBooking = async (req, res) => {
     try {
         // Lấy dữ liệu từ Frontend gửi lên (Đã bổ sung paymentMethod)
-        const { user, room, checkIn, checkOut, guests, totalPrice, paymentMethod } = req.body;
+        const { user, room, checkIn, checkOut, guests, totalPrice, paymentMethod, specialRequest, customerInfo } = req.body;
         
+        // ==========================================
+        // LOGIC KIỂM TRA SỐ LƯỢNG PHÒNG (INVENTORY)
+        // ==========================================
+        const roomDoc = await Room.findById(room);
+        if (!roomDoc) {
+            return res.status(404).json({ message: "Loại phòng không tồn tại" });
+        }
+
+        // Tìm các đơn đặt phòng của loại phòng này bị trùng ngày
+        // Công thức trùng ngày: checkIn của DB < checkOut mới VÀ checkOut của DB > checkIn mới
+        const overlappingBookings = await Booking.find({
+            room: room,
+            status: { $nin: ['Đã hủy', 'Đã trả phòng'] },
+            checkIn: { $lt: new Date(checkOut) },
+            checkOut: { $gt: new Date(checkIn) }
+        });
+
+        // Nếu số lượng người đã đặt bằng hoặc lớn hơn tổng số phòng khách sạn có
+        if (overlappingBookings.length >= roomDoc.quantity) {
+            return res.status(400).json({ 
+                message: "Rất tiếc! Loại phòng này đã hết chỗ trong khoảng thời gian bạn chọn." 
+            });
+        }
+
         // ==========================================
         // LOGIC TẠO MÃ BOOKING TỰ TĂNG (#KH-0001)
         // ==========================================
@@ -41,7 +66,9 @@ exports.createBooking = async (req, res) => {
             checkOut, 
             guests, 
             totalPrice,
-            paymentMethod 
+            paymentMethod,
+            specialRequest,
+            customerInfo
         });
         
         await newBooking.save();

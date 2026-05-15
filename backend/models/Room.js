@@ -5,7 +5,7 @@ const roomSchema = new mongoose.Schema({
     roomType: { type: String, required: true },
     price: { type: Number, required: true },
     images: [{ type: String }],
-    status: { type: String, enum: ['Còntrống', 'Đã đặt', 'Đang dọn dẹp'], default: 'Còntrống' },
+    quantity: { type: Number, default: 5 },     // Số lượng phòng của loại này
     
     // ======== CÁC TRƯỜNG MỚI BỔ SUNG CHO UI CLIENT ========
     size: { type: Number, default: 0 },         // Diện tích (m2)

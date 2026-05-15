@@ -14,6 +14,13 @@ const bookingSchema = new mongoose.Schema({
         default: 'Chờ xác nhận' 
     },
     paymentMethod: { type: String, default: 'Tiền mặt' },
+    specialRequest: { type: String, default: '' },
+    customerInfo: {
+        firstName: String,
+        lastName: String,
+        email: String,
+        phone: String
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);
