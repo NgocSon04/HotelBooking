@@ -3,12 +3,16 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 const connectDB = require('./config/db');
+const seedAdmin = require('./config/seedAdmin');
 
 // Khởi tạo app
 const app = express();
 
 // Kết nối Database
-connectDB();
+connectDB().then(() => {
+    // Khởi tạo admin mặc định sau khi đã kết nối DB thành công
+    seedAdmin();
+});
 
 // Middleware xử lý JSON và CORS
 app.use(cors());
@@ -30,6 +34,8 @@ app.use('/api/offers', require('./routes/offerRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/revenue', require('./routes/revenueRoutes'));
 
 
 // Route cơ bản kiểm tra server
