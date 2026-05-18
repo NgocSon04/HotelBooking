@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiMapPin, FiCalendar, FiUsers, FiSearch } from 'react-icons/fi';
+import { FiCalendar, FiUsers, FiSearch } from 'react-icons/fi';
 import { FaSpa, FaUtensils, FaSwimmer, FaRegStar } from 'react-icons/fa';
 import { MdOutlineKingBed } from 'react-icons/md';
 

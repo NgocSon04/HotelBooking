@@ -4,8 +4,8 @@ const User = require('../models/User');
 
 const seedAdmin = async () => {
     try {
-        // Kiểm tra xem đã có tài khoản Admin nào chưa
-        const adminExists = await User.findOne({ role: 'Admin' });
+        // Kiểm tra xem tài khoản Admin mặc định đã tồn tại chưa
+        const adminExists = await User.findOne({ email: 'admin123@gmail.com' });
 
         if (!adminExists) {
             // Nếu chưa có, tiến hành tạo mới
