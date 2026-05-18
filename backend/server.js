@@ -15,7 +15,10 @@ connectDB().then(() => {
 });
 
 // Middleware xử lý JSON và CORS
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    credentials: true
+}));
 app.use(express.json());
 
 // Phục vụ các file tĩnh (ảnh đã upload)

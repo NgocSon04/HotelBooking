@@ -10,11 +10,11 @@ const seedAdmin = async () => {
         if (!adminExists) {
             // Nếu chưa có, tiến hành tạo mới
             const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash('123456', salt);
+            const hashedPassword = await bcrypt.hash('admin123', salt);
 
             const newAdmin = new User({
                 fullName: 'Super Admin',
-                email: 'admin@gmail.com',
+                email: 'admin123@gmail.com',
                 password: hashedPassword,
                 phone: '0123456789',
                 role: 'Admin',
@@ -23,8 +23,8 @@ const seedAdmin = async () => {
 
             await newAdmin.save();
             console.log('✅ Đã tạo tài khoản Admin mặc định thành công:');
-            console.log('   - Email: admin@gmail.com');
-            console.log('   - Mật khẩu: 123456');
+            console.log('   - Tên đăng nhập/Email: admin123@gmail.com');
+            console.log('   - Mật khẩu: admin123');
         } else {
             console.log('ℹ️ Tài khoản Admin đã tồn tại trong hệ thống.');
         }
