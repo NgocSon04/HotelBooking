@@ -1,17 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { FiSearch, FiCalendar, FiUsers, FiMaximize, FiGrid } from 'react-icons/fi';
 import { MdOutlineKingBed } from 'react-icons/md';
 
 const RoomList = () => {
+  const [searchParams] = useSearchParams();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // States cho Bộ lọc
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [selectedTypes, setSelectedTypes] = useState([]);
+  const [selectedTypes, setSelectedTypes] = useState(() => {
+    const typeParam = searchParams.get('type');
+    return typeParam ? [typeParam] : [];
+  });
+
+  // Sync url param type to state
+  useEffect(() => {
+    const typeParam = searchParams.get('type');
+    if (typeParam) {
+      setSelectedTypes([typeParam]);
+    }
+  }, [searchParams]);
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [selectedRating, setSelectedRating] = useState(null);
   const [sortOption, setSortOption] = useState('Phổ biến nhất');
