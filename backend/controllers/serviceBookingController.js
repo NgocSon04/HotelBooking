@@ -6,6 +6,21 @@ exports.createServiceBooking = async (req, res) => {
     try {
         const { user, service, bookingDate, bookingTime, guests, notes } = req.body;
         
+        // ==========================================
+        // VALIDATE DỮ LIỆU ĐẦU VÀO CHO SERVICE BOOKING
+        // ==========================================
+        if (!user || !service || !bookingDate || !bookingTime || !guests) {
+            return res.status(400).json({ message: "Thiếu thông tin đặt dịch vụ bắt buộc!" });
+        }
+
+        if (new Date(bookingDate) < new Date(new Date().setHours(0, 0, 0, 0))) {
+            return res.status(400).json({ message: "Ngày hẹn dịch vụ không thể ở quá khứ!" });
+        }
+
+        if (Number(guests) <= 0 || Number(guests) > 30) {
+            return res.status(400).json({ message: "Số lượng khách đặt dịch vụ phải hợp lệ (từ 1 đến 30 người)!" });
+        }
+
         // Kiểm tra dịch vụ có tồn tại không
         const serviceDoc = await Service.findById(service);
         if (!serviceDoc) {

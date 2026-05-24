@@ -170,14 +170,14 @@ const RoomManagement = () => {
               <th className="p-4">Tên phòng</th>
               <th className="p-4">Loại phòng</th>
               <th className="p-4">Giá (VND)</th>
-              <th className="p-4">Số lượng</th>
+              <th className="p-4">Trống / Tổng số</th>
               <th className="p-4">Chi tiết</th>
               <th className="p-4">Hành động</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" className="p-4 text-center text-gray-500">Đang tải dữ liệu...</td></tr>
+              <tr><td colSpan="7" className="p-4 text-center text-gray-500">Đang tải dữ liệu...</td></tr>
             ) : rooms.map((room) => (
               <tr key={room._id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="p-4">
@@ -186,7 +186,12 @@ const RoomManagement = () => {
                 <td className="p-4 font-medium text-gray-700">{room.roomName}</td>
                 <td className="p-4 text-gray-500">{room.roomType}</td>
                 <td className="p-4 text-gray-700 font-bold">{Number(room.price).toLocaleString('vi-VN')}</td>
-                <td className="p-4 font-bold text-blue-600">{room.quantity || 5} phòng</td>
+                <td className="p-4">
+                  <span className={`font-bold ${room.availableCountToday > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {room.availableCountToday} trống
+                  </span>
+                  <span className="text-gray-400 font-normal"> / {room.quantity || 5} phòng</span>
+                </td>
                 <td className="p-4 text-sm text-gray-500">
                   {room.size}m² • {room.capacity} khách
                 </td>

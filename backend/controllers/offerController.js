@@ -26,8 +26,25 @@ exports.createOffer = async (req, res) => {
         const { title, description, category, promoCode, discountValue, discountType, priceText, tag, isActive } = req.body;
         const image = req.file ? `http://localhost:5000/uploads/${req.file.filename}` : '';
         
+        // Validation
+        if (!title || !description || !category) {
+            return res.status(400).json({ message: "Thiếu thông tin bắt buộc (Tiêu đề, Mô tả, Phân loại)!" });
+        }
+
+        if (category === 'Mã giảm giá') {
+            if (!promoCode) {
+                return res.status(400).json({ message: "Mục Mã giảm giá yêu cầu điền Promo Code!" });
+            }
+            if (discountValue === undefined || Number(discountValue) <= 0) {
+                return res.status(400).json({ message: "Giá trị giảm giá phải lớn hơn 0!" });
+            }
+            if (discountType === 'percentage' && Number(discountValue) > 100) {
+                return res.status(400).json({ message: "Giảm giá phần trăm không được vượt quá 100%!" });
+            }
+        }
+
         const newOffer = new Offer({ 
-            title, description, category, promoCode, discountValue, discountType, priceText, tag, isActive, image 
+            title, description, category, promoCode: promoCode ? promoCode.trim().toUpperCase() : '', discountValue: Number(discountValue) || 0, discountType, priceText, tag, isActive, image 
         });
         await newOffer.save();
         res.status(201).json(newOffer);
@@ -40,7 +57,30 @@ exports.createOffer = async (req, res) => {
 exports.updateOffer = async (req, res) => {
     try {
         const { title, description, category, promoCode, discountValue, discountType, priceText, tag, isActive } = req.body;
-        let updateData = { title, description, category, promoCode, discountValue, discountType, priceText, tag, isActive };
+        
+        // Validation
+        if (!title || !description || !category) {
+            return res.status(400).json({ message: "Thiếu thông tin bắt buộc (Tiêu đề, Mô tả, Phân loại)!" });
+        }
+
+        if (category === 'Mã giảm giá') {
+            if (!promoCode) {
+                return res.status(400).json({ message: "Mục Mã giảm giá yêu cầu điền Promo Code!" });
+            }
+            if (discountValue === undefined || Number(discountValue) <= 0) {
+                return res.status(400).json({ message: "Giá trị giảm giá phải lớn hơn 0!" });
+            }
+            if (discountType === 'percentage' && Number(discountValue) > 100) {
+                return res.status(400).json({ message: "Giảm giá phần trăm không được vượt quá 100%!" });
+            }
+        }
+
+        let updateData = { 
+            title, description, category, 
+            promoCode: promoCode ? promoCode.trim().toUpperCase() : '', 
+            discountValue: Number(discountValue) || 0, 
+            discountType, priceText, tag, isActive 
+        };
         
         if (req.file) {
             updateData.image = `http://localhost:5000/uploads/${req.file.filename}`;

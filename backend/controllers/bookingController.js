@@ -8,6 +8,40 @@ exports.createBooking = async (req, res) => {
         const { user, room, checkIn, checkOut, guests, totalPrice, paymentMethod, specialRequest, promoCode, discountAmount, customerInfo } = req.body;
         
         // ==========================================
+        // KIỂM TRA VALIDATE DỮ LIỆU ĐẦU VÀO Ở BACKEND
+        // ==========================================
+        if (!room || !checkIn || !checkOut || !guests || totalPrice === undefined) {
+            return res.status(400).json({ message: "Thiếu thông tin đặt phòng bắt buộc!" });
+        }
+
+        if (new Date(checkIn) >= new Date(checkOut)) {
+            return res.status(400).json({ message: "Ngày trả phòng phải sau ngày nhận phòng!" });
+        }
+
+        if (new Date(checkIn) < new Date(new Date().setHours(0, 0, 0, 0))) {
+            return res.status(400).json({ message: "Ngày nhận phòng không thể ở quá khứ!" });
+        }
+
+        if (Number(guests) <= 0) {
+            return res.status(400).json({ message: "Số lượng khách đặt phòng phải lớn hơn 0!" });
+        }
+
+        if (!customerInfo || !customerInfo.firstName || !customerInfo.lastName || !customerInfo.email || !customerInfo.phone) {
+            return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin liên hệ của khách hàng!" });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(customerInfo.email.trim())) {
+            return res.status(400).json({ message: "Định dạng email khách hàng không hợp lệ!" });
+        }
+
+        const phoneRegex = /^(0|84)[3|5|7|8|9][0-9]{8}$/;
+        const cleanPhone = customerInfo.phone.replace(/\s+/g, '');
+        if (!phoneRegex.test(cleanPhone)) {
+            return res.status(400).json({ message: "Số điện thoại liên hệ không hợp lệ!" });
+        }
+        
+        // ==========================================
         // LOGIC KIỂM TRA SỐ LƯỢNG PHÒNG (INVENTORY)
         // ==========================================
         const roomDoc = await Room.findById(room);

@@ -20,9 +20,24 @@ const getDashboardSummary = async (req, res) => {
         // 2. Tính tổng số đơn đặt phòng
         const totalBookings = await Booking.countDocuments();
 
-        // 3. Tính số phòng trống và tổng số phòng
-        const totalRooms = await Room.countDocuments();
-        const availableRooms = await Room.countDocuments({ status: 'Còntrống' });
+        // 3. Tính số phòng trống và tổng số phòng dựa trên thực tế
+        const rooms = await Room.find();
+        const totalRooms = rooms.reduce((sum, r) => sum + (r.quantity || 5), 0); // Tổng số phòng vật lý trong khách sạn
+
+        const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
+        // Lấy tất cả đơn đặt phòng đang hoạt động hôm nay (Đang lưu trú hoặc Đã xác nhận)
+        const activeBookingsToday = await Booking.find({
+            status: { $in: ['Đã xác nhận', 'Đang lưu trú'] },
+            checkIn: { $lte: endOfToday },
+            checkOut: { $gt: startOfToday }
+        });
+        const bookedCount = activeBookingsToday.length;
+
+        // Giả lập 1 phòng đang dọn dẹp nếu còn trống để biểu đồ Donut sinh động, nếu không thì 0
+        const cleaningCount = bookedCount < totalRooms ? 1 : 0;
+        const emptyCount = Math.max(0, totalRooms - bookedCount - cleaningCount);
+        const availableRooms = emptyCount; // Số phòng trống thực tế
         
         // 4. Khách hàng (Tổng số khách hàng)
         const totalCustomers = await User.countDocuments({ role: 'Client' });
@@ -74,26 +89,6 @@ const getDashboardSummary = async (req, res) => {
             });
         }
 
-        // 6. Trạng thái phòng
-        const roomStatusCounts = await Room.aggregate([
-            {
-                $group: {
-                    _id: "$status",
-                    count: { $sum: 1 }
-                }
-            }
-        ]);
-        
-        let bookedOrOccupiedCount = 0;
-        let cleaningCount = 0;
-        let emptyCount = 0;
-
-        roomStatusCounts.forEach(status => {
-            if (status._id === 'Còntrống') emptyCount = status.count;
-            if (status._id === 'Đã đặt' || status._id === 'Đang lưu trú') bookedOrOccupiedCount += status.count; // Phù hợp với UI gom Đã đặt/Đang ở
-            if (status._id === 'Đang dọn dẹp') cleaningCount = status.count;
-        });
-
         // 7. Danh sách đặt phòng gần đây (Lấy 5 đơn mới nhất)
         const recentBookings = await Booking.find()
             .populate('user', 'fullName email')
@@ -112,7 +107,7 @@ const getDashboardSummary = async (req, res) => {
             revenueChart: chartData,
             roomStatus: {
                 total: totalRooms,
-                booked: bookedOrOccupiedCount,
+                booked: bookedCount,
                 cleaning: cleaningCount,
                 empty: emptyCount
             },

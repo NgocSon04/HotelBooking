@@ -6,10 +6,11 @@ import { FaSpa, FaUtensils, FaSwimmer, FaRegStar } from 'react-icons/fa';
 import { MdOutlineKingBed } from 'react-icons/md';
 
 const heroImages = [
-  "https://images.unsplash.com/photo-1542314831-c6a4d2748610?q=80&w=2000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?q=80&w=2000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=2000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=2000&auto=format&fit=crop"
+  "https://images.unsplash.com/photo-1542314831-c6a4d2748610?q=70&w=1440&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=70&w=1440&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=70&w=1440&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=70&w=1440&auto=format&fit=crop",
+  "/images/anhbia1.jpg"
 ];
 
 const Home = () => {
@@ -29,11 +30,22 @@ const Home = () => {
     navigate(`/rooms${query}`);
   };
 
+  // Tự động chuyển đổi ảnh nền Hero sau mỗi 5 giây
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentBg((prev) => (prev + 1) % heroImages.length);
     }, 5000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Preload các ảnh trực tuyến vào bộ nhớ đệm trình duyệt ngay khi tải trang chủ
+  useEffect(() => {
+    heroImages.forEach((src) => {
+      if (src.startsWith('http')) {
+        const img = new Image();
+        img.src = src;
+      }
+    });
   }, []);
 
   useEffect(() => {

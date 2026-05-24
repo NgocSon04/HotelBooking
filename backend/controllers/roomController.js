@@ -1,11 +1,36 @@
 const Room = require('../models/Room');
+const Booking = require('../models/Booking');
 
-// [GET] Lấy danh sách toàn bộ phòng
+// [GET] Lấy danh sách toàn bộ phòng (Tính toán động số lượng trống hôm nay)
 exports.getAllRooms = async (req, res) => {
     try {
         const rooms = await Room.find().sort({ createdAt: -1 }); // Sắp xếp phòng mới nhất lên đầu
-        res.status(200).json(rooms);
+        
+        const today = new Date();
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
+        // Lấy tất cả các đơn đặt phòng hoạt động trong ngày hôm nay
+        const activeBookingsToday = await Booking.find({
+            status: { $in: ['Đã xác nhận', 'Đang lưu trú'] },
+            checkIn: { $lte: endOfToday },
+            checkOut: { $gt: startOfToday }
+        });
+
+        // Ánh xạ tính toán số lượng phòng trống thực tế
+        const roomsWithAvailability = rooms.map(room => {
+            const bookedCount = activeBookingsToday.filter(b => b.room.toString() === room._id.toString()).length;
+            const availableCount = Math.max(0, (room.quantity || 5) - bookedCount);
+            
+            const roomObj = room.toObject();
+            roomObj.bookedCountToday = bookedCount;
+            roomObj.availableCountToday = availableCount;
+            return roomObj;
+        });
+
+        res.status(200).json(roomsWithAvailability);
     } catch (error) {
+        console.error("Lỗi lấy danh sách phòng:", error);
         res.status(500).json({ message: "Lỗi server khi lấy dữ liệu phòng" });
     }
 };

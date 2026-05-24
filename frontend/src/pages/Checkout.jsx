@@ -98,8 +98,23 @@ const Checkout = () => {
   };
 
   const handleCheckout = async () => {
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.phone.trim()) {
       toast.error("Vui lòng điền đầy đủ thông tin khách hàng!");
+      return;
+    }
+
+    // Kiểm tra định dạng email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error("Định dạng email không hợp lệ!");
+      return;
+    }
+
+    // Kiểm tra định dạng số điện thoại Việt Nam
+    const phoneRegex = /^(0|84)[3|5|7|8|9][0-9]{8}$/;
+    const cleanPhone = formData.phone.replace(/\s+/g, '');
+    if (!phoneRegex.test(cleanPhone)) {
+      toast.error("Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại Việt Nam (VD: 0901234567).");
       return;
     }
 
