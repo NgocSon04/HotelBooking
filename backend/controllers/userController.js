@@ -68,3 +68,55 @@ exports.deleteUser = async (req, res) => {
         res.status(500).json({ message: "Lỗi khi xóa tài khoản" });
     }
 };
+
+// 5. Lưu mã giảm giá
+exports.saveOffer = async (req, res) => {
+    try {
+        const { offerId } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+        if (!user.savedOffers) {
+            user.savedOffers = [];
+        }
+
+        if (user.savedOffers.includes(offerId)) {
+            return res.status(400).json({ message: "Ưu đãi này đã được lưu trước đó!" });
+        }
+
+        user.savedOffers.push(offerId);
+        await user.save();
+        res.status(200).json({ message: "Lưu ưu đãi thành công!", savedOffers: user.savedOffers });
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi khi lưu ưu đãi", error });
+    }
+};
+
+// 6. Hủy lưu mã giảm giá
+exports.removeOffer = async (req, res) => {
+    try {
+        const { offerId } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+        if (user.savedOffers) {
+            user.savedOffers = user.savedOffers.filter(id => id.toString() !== offerId);
+            await user.save();
+        }
+        res.status(200).json({ message: "Hủy lưu ưu đãi thành công!", savedOffers: user.savedOffers || [] });
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi khi hủy lưu ưu đãi", error });
+    }
+};
+
+// 7. Lấy danh sách ưu đãi đã lưu
+exports.getSavedOffers = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).populate('savedOffers');
+        if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+        res.status(200).json(user.savedOffers || []);
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi khi lấy danh sách ưu đãi đã lưu", error });
+    }
+};

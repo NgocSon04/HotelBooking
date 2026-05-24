@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiGlobe, FiMoon, FiLogOut, FiClock } from 'react-icons/fi';
+import { FiGlobe, FiMoon, FiLogOut, FiClock, FiGift } from 'react-icons/fi';
 
 const ClientHeader = () => {
   const location = useLocation();
@@ -87,6 +87,9 @@ const ClientHeader = () => {
             <div className="absolute top-full right-0 hidden group-hover:flex flex-col bg-white border border-gray-100 shadow-xl rounded-xl min-w-[200px] overflow-hidden transition-all">
               <Link to="/history" className="px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#8c6b23] flex items-center gap-3 border-b border-gray-50">
                 <FiClock className="text-lg" /> Lịch sử đặt phòng
+              </Link>
+              <Link to="/my-offers" className="px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#8c6b23] flex items-center gap-3 border-b border-gray-50">
+                <FiGift className="text-lg" /> Khuyến mãi của bạn
               </Link>
               <button onClick={handleLogout} className="px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50 text-left flex items-center gap-3 w-full transition">
                 <FiLogOut className="text-lg" /> Đăng xuất

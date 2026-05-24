@@ -17,6 +17,7 @@ import RoomDetails from './pages/RoomDetails';
 import ServiceManagement from './pages/admin/ServiceManagement';
 import Services from './pages/Services';
 import Offers from './pages/Offers';
+import MyOffers from './pages/MyOffers';
 import OfferManagement from './pages/admin/OfferManagement';
 import Register from './pages/Register';
 import AccountManagement from './pages/admin/AccountManagement';
@@ -43,6 +44,7 @@ function App() {
           {/* Bạn có thể thêm các trang Dịch vụ, Liên hệ tại đây */}
           <Route path="/services" element={<Services />} />
           <Route path="/offers" element={<Offers />} />
+          <Route path="/my-offers" element={<MyOffers />} />
           <Route path="/history" element={<BookingHistory />} />
         </Route>
 

@@ -4,12 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { FiStar, FiX, FiCalendar, FiUsers, FiCreditCard, FiCheckCircle } from 'react-icons/fi';
 
 const BookingHistory = () => {
+  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' hoặc 'services'
   const [bookings, setBookings] = useState([]);
+  const [serviceBookings, setServiceBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Tất cả');
   
   // State để quản lý Modal Xem chi tiết
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [selectedServiceBooking, setSelectedServiceBooking] = useState(null);
   
   const navigate = useNavigate();
 
@@ -23,8 +26,14 @@ const BookingHistory = () => {
       
       const user = JSON.parse(storedUser);
       try {
-        const res = await axios.get(`http://localhost:5000/api/bookings/user/${user.id}`);
-        setBookings(res.data);
+        // Lấy lịch sử đặt phòng
+        const resRoom = await axios.get(`http://localhost:5000/api/bookings/user/${user.id}`);
+        setBookings(resRoom.data);
+
+        // Lấy lịch sử đặt dịch vụ
+        const resService = await axios.get(`http://localhost:5000/api/service-bookings/user/${user.id}`);
+        setServiceBookings(resService.data);
+
         setLoading(false);
       } catch (error) {
         console.error("Lỗi lấy lịch sử:", error);
@@ -57,13 +66,35 @@ const BookingHistory = () => {
         return bk.status === filter;
       });
 
-  const filterOptions = ['Tất cả', 'Chờ xác nhận', 'Đã xác nhận', 'Đã check-in', 'Đã hủy'];
+  const filteredServiceBookings = filter === 'Tất cả'
+    ? serviceBookings
+    : serviceBookings.filter(sb => sb.status === filter);
+
+  const filterOptions = activeTab === 'rooms'
+    ? ['Tất cả', 'Chờ xác nhận', 'Đã xác nhận', 'Đã check-in', 'Đã hủy']
+    : ['Tất cả', 'Chờ xác nhận', 'Đã xác nhận', 'Đã hủy'];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 font-sans bg-gray-50 min-h-screen relative">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#0b142f] mb-2">Lịch sử đặt phòng</h1>
-        <p className="text-gray-500">Theo dõi và quản lý các kỳ nghỉ của bạn tại Sơn Quân Hotel.</p>
+        <h1 className="text-3xl font-bold text-[#0b142f] mb-2">Lịch sử đặt chỗ</h1>
+        <p className="text-gray-500">Theo dõi và quản lý các kỳ nghỉ & dịch vụ của bạn tại Sơn Quân Hotel.</p>
+      </div>
+
+      {/* Tab Switcher */}
+      <div className="flex border-b border-gray-200 mb-8">
+        <button 
+          onClick={() => { setActiveTab('rooms'); setFilter('Tất cả'); }}
+          className={`py-3 px-6 font-bold text-sm transition-all border-b-2 ${activeTab === 'rooms' ? 'border-[#8c6b23] text-[#8c6b23]' : 'border-transparent text-gray-500 hover:text-[#8c6b23]'}`}
+        >
+          🏨 Đơn đặt phòng ({bookings.length})
+        </button>
+        <button 
+          onClick={() => { setActiveTab('services'); setFilter('Tất cả'); }}
+          className={`py-3 px-6 font-bold text-sm transition-all border-b-2 ${activeTab === 'services' ? 'border-[#8c6b23] text-[#8c6b23]' : 'border-transparent text-gray-500 hover:text-[#8c6b23]'}`}
+        >
+          ✨ Đơn đặt dịch vụ ({serviceBookings.length})
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -100,12 +131,13 @@ const BookingHistory = () => {
         <div className="lg:col-span-3 space-y-6">
           {loading ? (
             <div className="text-center py-10 text-gray-500">Đang tải lịch sử...</div>
-          ) : filteredBookings.length === 0 ? (
-            <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-gray-100">
-              <p className="text-gray-500">Không có giao dịch nào ở trạng thái này.</p>
-            </div>
-          ) : (
-            filteredBookings.map((bk) => {
+          ) : activeTab === 'rooms' ? (
+            filteredBookings.length === 0 ? (
+              <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-gray-100">
+                <p className="text-gray-500">Không có giao dịch nào ở trạng thái này.</p>
+              </div>
+            ) : (
+              filteredBookings.map((bk) => {
               const isCancelled = bk.status === 'Đã hủy';
               let badgeStyle = "bg-gray-100 text-gray-600";
               let statusText = bk.status;
@@ -171,7 +203,76 @@ const BookingHistory = () => {
                   </div>
                 </div>
               );
-            })
+            }) )
+          ) : (
+            filteredServiceBookings.length === 0 ? (
+              <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-gray-100">
+                <p className="text-gray-500">Không có đơn đặt dịch vụ nào ở trạng thái này.</p>
+              </div>
+            ) : (
+              filteredServiceBookings.map((sb) => {
+                const isCancelled = sb.status === 'Đã hủy';
+                let badgeStyle = "bg-gray-100 text-gray-600";
+                let dotColor = "bg-gray-400";
+
+                if (sb.status === 'Đã xác nhận') { badgeStyle = "bg-green-100 text-green-700"; dotColor = "bg-green-500"; }
+                else if (sb.status === 'Chờ xác nhận') { badgeStyle = "bg-yellow-100 text-yellow-700"; dotColor = "bg-yellow-500"; }
+
+                const serviceImage = sb.service?.image || 'https://via.placeholder.com/400x300?text=No+Image';
+
+                return (
+                  <div key={sb._id} className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col md:flex-row transition ${isCancelled ? 'opacity-70 grayscale bg-gray-50' : 'hover:shadow-md'}`}>
+                    <div className="md:w-1/3 relative h-48 md:h-auto border-r border-gray-100">
+                      <img src={serviceImage} alt={sb.service?.serviceName} className="w-full h-full object-cover" />
+                      <div className="absolute top-3 right-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center shadow-sm ${isCancelled ? 'bg-white text-gray-500' : badgeStyle}`}>
+                          {!isCancelled && <span className={`w-1.5 h-1.5 rounded-full ${dotColor} mr-1.5`}></span>}
+                          {sb.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="md:w-2/3 p-6 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className={`text-xl font-bold ${isCancelled ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                            {sb.service?.serviceName || 'Dịch vụ đã xóa'}
+                          </h3>
+                          <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded">Mã: {sb.bookingCode}</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+                          <div>
+                            <p className="text-gray-500 flex items-center gap-1 mb-1">Ngày đặt chỗ</p>
+                            <p className="font-bold text-gray-800">{formatDate(sb.bookingDate)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 flex items-center gap-1 mb-1">Giờ hẹn</p>
+                            <p className="font-bold text-gray-800">{sb.bookingTime}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-end border-t border-gray-100 pt-4">
+                        <div>
+                          <p className="text-gray-500 text-xs mb-1">Giá dịch vụ</p>
+                          <p className={`text-lg font-bold ${isCancelled ? 'text-gray-400' : 'text-[#8c6b23]'}`}>
+                            {sb.service?.price}
+                          </p>
+                        </div>
+                        
+                        <button 
+                          onClick={() => setSelectedServiceBooking(sb)}
+                          className={`px-5 py-2 text-sm font-bold rounded-lg border transition ${isCancelled ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed hover:bg-gray-100' : 'border-[#8c6b23] text-[#8c6b23] hover:bg-yellow-50'}`}
+                        >
+                          Xem chi tiết
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )
           )}
         </div>
       </div>
@@ -292,6 +393,91 @@ const BookingHistory = () => {
         </div>
       )}
 
+      {/* ================= MODAL CHI TIẾT ĐẶT DỊCH VỤ ================= */}
+      {selectedServiceBooking && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            {/* Header Modal */}
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 sticky top-0 z-10">
+              <h2 className="text-xl font-bold text-[#0b142f]">Chi tiết Đặt Dịch Vụ</h2>
+              <button 
+                onClick={() => setSelectedServiceBooking(null)} 
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+
+            {/* Body Modal */}
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              
+              {/* Box 1: Mã & Trạng thái */}
+              <div className="flex justify-between items-center mb-6 bg-yellow-50/50 p-4 rounded-xl border border-yellow-100">
+                <div>
+                  <p className="text-sm text-gray-500">Mã Booking</p>
+                  <p className="text-lg font-bold text-[#8c6b23]">{selectedServiceBooking.bookingCode}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Trạng thái</p>
+                  <p className={`font-bold ${selectedServiceBooking.status === 'Đã hủy' ? 'text-red-500' : 'text-green-600'} flex items-center gap-1 justify-end`}>
+                    {selectedServiceBooking.status !== 'Đã hủy' && <FiCheckCircle />} {selectedServiceBooking.status}
+                  </p>
+                </div>
+              </div>
+
+              {/* Box 2: Thông tin dịch vụ */}
+              <div className="flex gap-4 mb-6 pb-6 border-b border-gray-100">
+                <img 
+                  src={selectedServiceBooking.service?.image || 'https://via.placeholder.com/400x300'} 
+                  alt="Service" 
+                  className="w-24 h-24 object-cover rounded-xl shadow-sm border border-gray-200" 
+                />
+                <div className="flex flex-col justify-center">
+                  <h3 className="text-lg font-bold text-gray-900">{selectedServiceBooking.service?.serviceName}</h3>
+                  <p className="text-[#8c6b23] font-bold text-sm">{selectedServiceBooking.service?.price}</p>
+                </div>
+              </div>
+
+              {/* Box 3: Chi tiết lịch hẹn */}
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Ngày hẹn</p>
+                  <p className="font-bold text-gray-800">{formatDate(selectedServiceBooking.bookingDate)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Giờ hẹn</p>
+                  <p className="font-bold text-gray-800">{selectedServiceBooking.bookingTime}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Số lượng khách</p>
+                  <p className="font-bold text-gray-800">{selectedServiceBooking.guests} người</p>
+                </div>
+              </div>
+
+              {/* Box 4: Ghi chú */}
+              {selectedServiceBooking.notes && (
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-600">
+                  <p className="font-bold text-gray-800 mb-1">Yêu cầu đặc biệt:</p>
+                  <p className="italic">"{selectedServiceBooking.notes}"</p>
+                </div>
+              )}
+              
+            </div>
+
+            {/* Footer Modal */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+              <button 
+                onClick={() => setSelectedServiceBooking(null)} 
+                className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-bold hover:bg-gray-300 transition"
+              >
+                Đóng
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };

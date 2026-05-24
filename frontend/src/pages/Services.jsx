@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiClock, FiTag, FiWind, FiBriefcase } from 'react-icons/fi';
+import { FiClock, FiTag, FiWind, FiBriefcase, FiX, FiUsers } from 'react-icons/fi';
 import { BiRestaurant, BiDumbbell, BiSpa, BiSwim } from 'react-icons/bi';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Services = () => {
+  const navigate = useNavigate();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // States cho đặt dịch vụ
+  const [selectedService, setSelectedService] = useState(null);
+  const [bookingFormData, setBookingFormData] = useState({
+    bookingDate: '',
+    bookingTime: '08:00',
+    guests: 1,
+    notes: ''
+  });
+  const [bookingLoading, setBookingLoading] = useState(false);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -20,6 +34,56 @@ const Services = () => {
     };
     fetchServices();
   }, []);
+
+  const handleOpenBookingModal = (service) => {
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      toast.warning("Vui lòng đăng nhập để đặt dịch vụ!");
+      setTimeout(() => navigate('/login'), 1500);
+      return;
+    }
+    setSelectedService(service);
+    setBookingFormData({
+      bookingDate: '',
+      bookingTime: service.operatingHours ? service.operatingHours.split(' ')[0] : '08:00',
+      guests: 1,
+      notes: ''
+    });
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setBookingFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    if (!bookingFormData.bookingDate) {
+      toast.warning("Vui lòng chọn ngày đặt!");
+      return;
+    }
+
+    const storedUser = localStorage.getItem('user');
+    const user = JSON.parse(storedUser);
+
+    setBookingLoading(true);
+    try {
+      await axios.post('http://localhost:5000/api/service-bookings', {
+        user: user.id,
+        service: selectedService._id,
+        bookingDate: bookingFormData.bookingDate,
+        bookingTime: bookingFormData.bookingTime,
+        guests: Number(bookingFormData.guests),
+        notes: bookingFormData.notes
+      });
+      toast.success(`🎉 Đặt dịch vụ "${selectedService.serviceName}" thành công!`);
+      setSelectedService(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Đặt dịch vụ thất bại!");
+    } finally {
+      setBookingLoading(false);
+    }
+  };
 
   // Hàm hỗ trợ render Icon tự động dựa trên tên loại dịch vụ
   const renderIcon = (type) => {
@@ -77,7 +141,10 @@ const Services = () => {
                           {svc.price && <div className="flex items-center gap-2"><FiTag className="text-[#8c6b23]" /> {svc.price}</div>}
                         </div>
                       </div>
-                      <button className="w-full sm:w-auto bg-gradient-to-r from-[#b38d38] to-[#8c6b23] text-white px-6 py-3 rounded-lg font-bold hover:opacity-90 transition">
+                      <button 
+                        onClick={() => handleOpenBookingModal(svc)}
+                        className="w-full sm:w-auto bg-gradient-to-r from-[#b38d38] to-[#8c6b23] text-white px-6 py-3 rounded-lg font-bold hover:opacity-90 transition"
+                      >
                         Đặt dịch vụ
                       </button>
                     </div>
@@ -105,13 +172,18 @@ const Services = () => {
                           {svc.price && <div className="flex items-center gap-2"><FiTag /> {svc.price}</div>}
                         </div>
                       </div>
-                      <button className={`w-full py-2.5 rounded-lg font-bold transition border ${
-                        pattern === 1 
-                        ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
-                        : 'bg-[#0b142f] text-white hover:bg-gray-800'
-                      }`}>
-                        {pattern === 1 ? 'Chi tiết' : 'Đặt liệu trình'}
-                      </button>
+                      {pattern === 1 ? (
+                        <button className="w-full py-2.5 rounded-lg font-bold transition border border-gray-300 text-gray-700 hover:bg-gray-50">
+                          Chi tiết
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => handleOpenBookingModal(svc)}
+                          className="w-full py-2.5 rounded-lg font-bold transition border bg-[#0b142f] text-white hover:bg-gray-800"
+                        >
+                          Đặt liệu trình
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -135,7 +207,10 @@ const Services = () => {
                       
                       <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl md:min-w-[200px]">
                         {svc.operatingHours && <div className="text-white text-xs mb-3 font-medium">Giờ mở cửa: <br/>{svc.operatingHours}</div>}
-                        <button className="w-full bg-[#8c6b23] text-white py-2 rounded-lg font-bold hover:bg-[#7a5c1e] transition text-sm shadow">
+                        <button 
+                          onClick={() => handleOpenBookingModal(svc)}
+                          className="w-full bg-[#8c6b23] text-white py-2 rounded-lg font-bold hover:bg-[#7a5c1e] transition text-sm shadow"
+                        >
                           Đặt chỗ ngay
                         </button>
                       </div>
@@ -173,8 +248,117 @@ const Services = () => {
           </div>
         </div>
       </div>
+
+      <ToastContainer position="bottom-right" />
+
+      {/* ================= MODAL ĐẶT DỊCH VỤ ================= */}
+      {selectedService && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-fade-in-up">
+            {/* Header Modal */}
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 sticky top-0 z-10">
+              <h2 className="text-xl font-bold text-[#0b142f]">Đặt Dịch Vụ</h2>
+              <button 
+                onClick={() => setSelectedService(null)} 
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+
+            {/* Body Form */}
+            <form onSubmit={handleBookingSubmit} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+              <div className="flex gap-4 pb-4 border-b">
+                <img 
+                  src={selectedService.image || 'https://via.placeholder.com/150'} 
+                  alt="Service" 
+                  className="w-20 h-20 object-cover rounded-xl border border-gray-200" 
+                />
+                <div className="flex flex-col justify-center">
+                  <h3 className="font-bold text-gray-900 text-lg leading-snug">{selectedService.serviceName}</h3>
+                  <p className="text-sm text-yellow-600 font-bold mt-1">{selectedService.price}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Ngày đặt chỗ *</label>
+                <input 
+                  type="date" 
+                  name="bookingDate" 
+                  required
+                  value={bookingFormData.bookingDate} 
+                  onChange={handleFormChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full border rounded-lg px-4 py-2.5 outline-none focus:border-[#8c6b23] focus:ring-1 focus:ring-[#8c6b23] bg-gray-50/50"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Giờ hẹn *</label>
+                  <input 
+                    type="time" 
+                    name="bookingTime" 
+                    required
+                    value={bookingFormData.bookingTime} 
+                    onChange={handleFormChange}
+                    className="w-full border rounded-lg px-4 py-2.5 outline-none focus:border-[#8c6b23] focus:ring-1 focus:ring-[#8c6b23] bg-gray-50/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Số lượng khách *</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      name="guests" 
+                      min="1" 
+                      max="20"
+                      required
+                      value={bookingFormData.guests} 
+                      onChange={handleFormChange}
+                      className="w-full border rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#8c6b23] focus:ring-1 focus:ring-[#8c6b23] bg-gray-50/50 font-bold"
+                    />
+                    <FiUsers className="absolute left-3 top-3.5 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Yêu cầu đặc biệt (Nếu có)</label>
+                <textarea 
+                  name="notes" 
+                  rows="3" 
+                  value={bookingFormData.notes} 
+                  onChange={handleFormChange}
+                  placeholder="Ví dụ: Bàn view cửa sổ, liệu trình viên nữ, dị ứng hải sản..."
+                  className="w-full border rounded-lg px-4 py-2.5 outline-none focus:border-[#8c6b23] focus:ring-1 focus:ring-[#8c6b23] bg-gray-50/50 text-sm"
+                ></textarea>
+              </div>
+
+              <div className="pt-4 flex gap-3 border-t">
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedService(null)} 
+                  className="flex-1 py-3 border border-gray-300 rounded-lg text-gray-700 font-bold hover:bg-gray-50 transition"
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={bookingLoading}
+                  className="flex-1 py-3 bg-[#0b142f] text-white rounded-lg font-bold hover:bg-gray-800 transition disabled:opacity-50"
+                >
+                  {bookingLoading ? 'Đang đặt...' : 'Xác nhận đặt chỗ'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Services;
+
+

@@ -13,6 +13,7 @@ const upload = multer({ storage: storage });
 
 // Routes cho Client
 router.get('/client', offerController.getAllOffersClient);
+router.post('/verify', offerController.verifyPromoCode);
 
 // Routes cho Admin
 router.get('/admin', offerController.getAllOffersAdmin);

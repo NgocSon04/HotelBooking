@@ -23,11 +23,11 @@ exports.getAllOffersClient = async (req, res) => {
 // [POST] Thêm ưu đãi mới
 exports.createOffer = async (req, res) => {
     try {
-        const { title, description, category, promoCode, priceText, tag, isActive } = req.body;
+        const { title, description, category, promoCode, discountValue, discountType, priceText, tag, isActive } = req.body;
         const image = req.file ? `http://localhost:5000/uploads/${req.file.filename}` : '';
         
         const newOffer = new Offer({ 
-            title, description, category, promoCode, priceText, tag, isActive, image 
+            title, description, category, promoCode, discountValue, discountType, priceText, tag, isActive, image 
         });
         await newOffer.save();
         res.status(201).json(newOffer);
@@ -39,8 +39,8 @@ exports.createOffer = async (req, res) => {
 // [PUT] Cập nhật ưu đãi
 exports.updateOffer = async (req, res) => {
     try {
-        const { title, description, category, promoCode, priceText, tag, isActive } = req.body;
-        let updateData = { title, description, category, promoCode, priceText, tag, isActive };
+        const { title, description, category, promoCode, discountValue, discountType, priceText, tag, isActive } = req.body;
+        let updateData = { title, description, category, promoCode, discountValue, discountType, priceText, tag, isActive };
         
         if (req.file) {
             updateData.image = `http://localhost:5000/uploads/${req.file.filename}`;
@@ -60,5 +60,35 @@ exports.deleteOffer = async (req, res) => {
         res.status(200).json({ message: "Xóa ưu đãi thành công" });
     } catch (error) {
         res.status(500).json({ message: "Lỗi khi xóa ưu đãi" });
+    }
+};
+
+// [POST] Xác thực mã giảm giá
+exports.verifyPromoCode = async (req, res) => {
+    try {
+        const { promoCode } = req.body;
+        if (!promoCode) {
+            return res.status(400).json({ message: "Vui lòng cung cấp mã giảm giá!" });
+        }
+
+        const offer = await Offer.findOne({
+            category: 'Mã giảm giá',
+            promoCode: promoCode.trim().toUpperCase(),
+            isActive: true
+        });
+
+        if (!offer) {
+            return res.status(404).json({ message: "Mã giảm giá không tồn tại hoặc đã hết hạn!" });
+        }
+
+        res.status(200).json({
+            message: "Xác thực mã giảm giá thành công!",
+            promoCode: offer.promoCode,
+            discountValue: offer.discountValue,
+            discountType: offer.discountType,
+            title: offer.title
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi xác thực mã giảm giá", error });
     }
 };

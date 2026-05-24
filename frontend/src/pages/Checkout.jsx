@@ -19,6 +19,11 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('Thanh toán sau');
   const [loading, setLoading] = useState(false);
 
+  const [promoInput, setPromoInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [verifyingPromo, setVerifyingPromo] = useState(false);
+
   // Lấy dữ liệu được truyền từ trang RoomDetails
   const bookingData = location.state;
 
@@ -52,6 +57,46 @@ const Checkout = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) {
+      toast.warning("Vui lòng nhập mã giảm giá!");
+      return;
+    }
+
+    setVerifyingPromo(true);
+    try {
+      const res = await axios.post('http://localhost:5000/api/offers/verify', { promoCode: promoInput });
+      const promo = res.data;
+      
+      let calculatedDiscount = 0;
+      if (promo.discountType === 'percentage') {
+        calculatedDiscount = Math.round(totalRoomPrice * (promo.discountValue / 100));
+      } else if (promo.discountType === 'fixed') {
+        calculatedDiscount = promo.discountValue;
+      }
+
+      // Giới hạn giảm giá tối đa bằng tổng tiền phòng
+      calculatedDiscount = Math.min(calculatedDiscount, totalRoomPrice);
+
+      setAppliedPromo(promo);
+      setDiscountAmount(calculatedDiscount);
+      toast.success(`🎉 Áp dụng mã ${promo.promoCode} thành công! Được giảm ${calculatedDiscount.toLocaleString('vi-VN')} đ`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Mã giảm giá không hợp lệ hoặc đã hết hạn!");
+      setAppliedPromo(null);
+      setDiscountAmount(0);
+    } finally {
+      setVerifyingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setDiscountAmount(0);
+    setPromoInput('');
+    toast.info("Đã hủy áp dụng mã giảm giá.");
+  };
+
   const handleCheckout = async () => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
       toast.error("Vui lòng điền đầy đủ thông tin khách hàng!");
@@ -69,9 +114,11 @@ const Checkout = () => {
         checkIn,
         checkOut,
         guests: Number(guests),
-        totalPrice: grandTotal,
+        totalPrice: grandTotal - discountAmount,
         paymentMethod,
         specialRequest: formData.specialRequest,
+        promoCode: appliedPromo ? appliedPromo.promoCode : '',
+        discountAmount: discountAmount,
         customerInfo: { // Gửi kèm thông tin nhập ở form
            firstName: formData.firstName,
            lastName: formData.lastName,
@@ -292,6 +339,46 @@ const Checkout = () => {
                       <div className="flex items-center gap-2">👥 {guests} Người lớn</div>
                    </div>
 
+                   {/* Nhập mã khuyến mãi */}
+                   <div className="mb-6 pb-6 border-b border-gray-100">
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Mã khuyến mãi</label>
+                      {appliedPromo ? (
+                         <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                            <div>
+                               <p className="text-xs text-green-700 font-bold">Đã áp dụng mã:</p>
+                               <p className="text-sm font-bold text-green-800">
+                                  {appliedPromo.promoCode} (-{appliedPromo.discountType === 'percentage' ? `${appliedPromo.discountValue}%` : `${appliedPromo.discountValue.toLocaleString('vi-VN')} đ`})
+                               </p>
+                            </div>
+                            <button 
+                               type="button"
+                               onClick={handleRemovePromo}
+                               className="text-xs text-red-500 hover:text-red-700 font-bold underline"
+                            >
+                               Gỡ bỏ
+                            </button>
+                         </div>
+                      ) : (
+                         <div className="flex gap-2">
+                            <input 
+                               type="text" 
+                               value={promoInput} 
+                               onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                               placeholder="NHẬP MÃ (VD: VIP20)" 
+                               className="flex-1 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#8c6b23] uppercase font-bold text-sm"
+                            />
+                            <button 
+                               type="button"
+                               onClick={handleApplyPromo}
+                               disabled={verifyingPromo}
+                               className="bg-[#0b142f] text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-[#1a2954] transition disabled:opacity-50 font-sans"
+                            >
+                               {verifyingPromo ? 'Đang áp dụng...' : 'Áp dụng'}
+                            </button>
+                         </div>
+                      )}
+                   </div>
+
                    {/* Price Breakdown */}
                    <div className="space-y-3 text-sm text-gray-600 mb-6 border-b border-gray-100 pb-6 border-dashed">
                       <div className="flex justify-between font-medium">
@@ -302,6 +389,12 @@ const Checkout = () => {
                          <span>Thuế & Phí dịch vụ (15%)</span>
                          <span className="font-bold text-gray-800">{(serviceFee + tax).toLocaleString('vi-VN')} đ</span>
                       </div>
+                      {discountAmount > 0 && (
+                         <div className="flex justify-between text-green-600 font-medium">
+                            <span>🎁 Mã giảm giá ({appliedPromo?.promoCode})</span>
+                            <span className="font-bold">- {discountAmount.toLocaleString('vi-VN')} đ</span>
+                         </div>
+                      )}
                       <div className="flex justify-between text-[#8c6b23] font-medium">
                          <span><FiStar className="inline mr-1"/> Ưu đãi thành viên</span>
                          <span className="font-bold">- 0 đ</span>
@@ -314,7 +407,7 @@ const Checkout = () => {
                          <p className="text-lg font-bold text-gray-900 leading-none">Tổng cộng</p>
                          <p className="text-xs text-gray-500 mt-1">Đã bao gồm thuế</p>
                       </div>
-                      <div className="text-2xl font-bold text-[#8c6b23]">{grandTotal.toLocaleString('vi-VN')} đ</div>
+                      <div className="text-2xl font-bold text-[#8c6b23]">{(grandTotal - discountAmount).toLocaleString('vi-VN')} đ</div>
                    </div>
 
                    {/* Button */}

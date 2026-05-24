@@ -5,7 +5,6 @@ import {
   FiCalendar, 
   FiUser, 
   FiSettings, 
-  FiPlus, 
   FiBriefcase, 
   FiGift,
   FiLogOut
@@ -100,16 +99,12 @@ const Sidebar = () => {
 
       {/* Khu vực chức năng ở dưới cùng */}
       <div className="p-4 border-t border-white/5 flex flex-col gap-2">
-        <button className="w-full flex items-center justify-center gap-2 bg-[#facc15] text-[#0b142f] font-bold py-3 rounded-xl hover:bg-yellow-500 transition-all active:scale-95 shadow-md">
-          <FiPlus className="w-5 h-5" />
-          Báo cáo mới
-        </button>
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 text-gray-400 hover:text-red-400 font-medium py-2 rounded-xl transition-all"
+          className="w-full flex items-center justify-center gap-2 bg-red-600/10 text-red-400 font-bold py-3 rounded-xl hover:bg-red-600 hover:text-white transition-all active:scale-95 border border-red-500/20 shadow-md"
         >
           <FiLogOut className="w-5 h-5" />
-          Đăng xuất
+          Đăng Xuất
         </button>
       </div>
     </div>

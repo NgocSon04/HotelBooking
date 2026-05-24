@@ -5,7 +5,7 @@ const Room = require('../models/Room');
 exports.createBooking = async (req, res) => {
     try {
         // Lấy dữ liệu từ Frontend gửi lên (Đã bổ sung paymentMethod)
-        const { user, room, checkIn, checkOut, guests, totalPrice, paymentMethod, specialRequest, customerInfo } = req.body;
+        const { user, room, checkIn, checkOut, guests, totalPrice, paymentMethod, specialRequest, promoCode, discountAmount, customerInfo } = req.body;
         
         // ==========================================
         // LOGIC KIỂM TRA SỐ LƯỢNG PHÒNG (INVENTORY)
@@ -68,6 +68,8 @@ exports.createBooking = async (req, res) => {
             totalPrice,
             paymentMethod,
             specialRequest,
+            promoCode,
+            discountAmount,
             customerInfo
         });
         

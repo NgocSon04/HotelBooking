@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     phone: { type: String, required: true },
     role: { type: String, enum: ['Admin', 'Staff', 'Client'], default: 'Client' },
     status: { type: String, enum: ['Hoạt động', 'Đã khóa'], default: 'Hoạt động' },
-    avatar: { type: String, default: 'https://i.pravatar.cc/150' } // Avatar mặc định
+    avatar: { type: String, default: 'https://i.pravatar.cc/150' }, // Avatar mặc định
+    savedOffers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Offer' }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

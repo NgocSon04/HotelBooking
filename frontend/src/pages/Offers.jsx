@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FiCopy, FiArrowRight } from 'react-icons/fi';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Offers = () => {
+  const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
   const [activeCategory, setActiveCategory] = useState('Tất cả');
   const [loading, setLoading] = useState(true);
+
+  const [user, setUser] = useState(null);
+  const [savedOfferIds, setSavedOfferIds] = useState([]);
 
   useEffect(() => {
     const fetchOffers = async () => {
       try {
         // Gọi API lấy dữ liệu
-        const response = await axios.get('http://localhost:5000/api/offers');
+        const response = await axios.get('http://localhost:5000/api/offers/client');
         setOffers(response.data);
         setLoading(false);
       } catch (error) {
@@ -22,7 +27,45 @@ const Offers = () => {
       }
     };
     fetchOffers();
+
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      fetchSavedOffers(parsedUser.id);
+    }
   }, []);
+
+  const fetchSavedOffers = async (userId) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/users/${userId}/saved-offers`);
+      setSavedOfferIds(res.data.map(offer => offer._id));
+    } catch (error) {
+      console.error("Lỗi tải danh sách mã đã lưu:", error);
+    }
+  };
+
+  const handleSaveOffer = async (offerId) => {
+    if (!user) {
+      toast.warning("Vui lòng đăng nhập để lưu mã giảm giá!");
+      return;
+    }
+
+    const isAlreadySaved = savedOfferIds.includes(offerId);
+    try {
+      if (isAlreadySaved) {
+        await axios.post(`http://localhost:5000/api/users/${user.id}/remove-offer`, { offerId });
+        setSavedOfferIds(prev => prev.filter(id => id !== offerId));
+        toast.success("Đã hủy lưu mã giảm giá!");
+      } else {
+        await axios.post(`http://localhost:5000/api/users/${user.id}/save-offer`, { offerId });
+        setSavedOfferIds(prev => [...prev, offerId]);
+        toast.success("Lưu mã giảm giá thành công! Bạn có thể xem tại trang 'Khuyến mãi của bạn'");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Lỗi khi lưu ưu đãi!");
+    }
+  };
 
   const categories = ['Tất cả', 'Gói Combo', 'Mã giảm giá', 'Ưu đãi VIP'];
 
@@ -109,9 +152,24 @@ const Offers = () => {
                       </button>
                     </div>
                     
-                    <button className="w-full bg-[#0b142f] text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition">
-                      Sử dụng ngay
-                    </button>
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => handleSaveOffer(offer._id)}
+                        className={`flex-1 py-3 rounded-lg font-bold transition text-sm ${
+                          savedOfferIds.includes(offer._id)
+                            ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
+                            : 'bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100'
+                        }`}
+                      >
+                        {savedOfferIds.includes(offer._id) ? '✓ Đã Lưu' : '💾 Lưu Mã'}
+                      </button>
+                      <button 
+                        onClick={() => navigate('/rooms')}
+                        className="flex-1 bg-[#0b142f] text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition text-sm"
+                      >
+                        Sử dụng ngay
+                      </button>
+                    </div>
                   </div>
                 );
               }

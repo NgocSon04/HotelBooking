@@ -116,6 +116,17 @@ const seedData = async () => {
                 description: 'Nhập mã giảm giá khi thanh toán để được giảm ngay 20% cho tất cả các loại phòng, áp dụng cả lễ tết.',
                 category: 'Mã giảm giá',
                 promoCode: 'VIP20',
+                discountValue: 20,
+                discountType: 'percentage',
+                isActive: true
+            },
+            {
+                title: 'Ưu Đãi Chào Mừng Thành Viên Mới',
+                description: 'Nhập mã WELCOME100 để được giảm ngay 100.000đ khi đặt phòng lần đầu tại Sơn Quân Hotel.',
+                category: 'Mã giảm giá',
+                promoCode: 'WELCOME100',
+                discountValue: 100000,
+                discountType: 'fixed',
                 isActive: true
             },
             {

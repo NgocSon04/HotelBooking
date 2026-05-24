@@ -15,6 +15,8 @@ const bookingSchema = new mongoose.Schema({
     },
     paymentMethod: { type: String, default: 'Tiền mặt' },
     specialRequest: { type: String, default: '' },
+    promoCode: { type: String, default: '' },
+    discountAmount: { type: Number, default: 0 },
     customerInfo: {
         firstName: String,
         lastName: String,

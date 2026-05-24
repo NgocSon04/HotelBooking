@@ -13,6 +13,8 @@ const OfferManagement = () => {
     description: '',
     category: 'Gói Combo',
     promoCode: '',
+    discountValue: 0,
+    discountType: 'percentage',
     priceText: '',
     tag: '',
     isActive: true
@@ -37,6 +39,8 @@ const OfferManagement = () => {
         description: offer.description, 
         category: offer.category, 
         promoCode: offer.promoCode || '', 
+        discountValue: offer.discountValue || 0,
+        discountType: offer.discountType || 'percentage',
         priceText: offer.priceText || '', 
         tag: offer.tag || '', 
         isActive: offer.isActive 
@@ -44,7 +48,17 @@ const OfferManagement = () => {
       setPreview(offer.image);
     } else {
       setEditingId(null);
-      setFormData({ title: '', description: '', category: 'Gói Combo', promoCode: '', priceText: '', tag: '', isActive: true });
+      setFormData({ 
+        title: '', 
+        description: '', 
+        category: 'Gói Combo', 
+        promoCode: '', 
+        discountValue: 0,
+        discountType: 'percentage',
+        priceText: '', 
+        tag: '', 
+        isActive: true 
+      });
       setPreview(null);
     }
     setImageFile(null);
@@ -67,7 +81,10 @@ const OfferManagement = () => {
     // Validate
     if (!formData.title.trim()) return toast.warning("Vui lòng nhập Tiêu đề ưu đãi!");
     if (!formData.description.trim()) return toast.warning("Vui lòng nhập Mô tả!");
-    if (formData.category === 'Mã giảm giá' && !formData.promoCode.trim()) return toast.warning("Vui lòng nhập Mã giảm giá!");
+    if (formData.category === 'Mã giảm giá') {
+      if (!formData.promoCode.trim()) return toast.warning("Vui lòng nhập Mã giảm giá!");
+      if (formData.discountValue <= 0) return toast.warning("Vui lòng nhập Giá trị giảm giá lớn hơn 0!");
+    }
     if (formData.category === 'Gói Combo' && !formData.priceText.trim()) return toast.warning("Vui lòng nhập Giá Combo!");
 
     const data = new FormData();
@@ -120,7 +137,14 @@ const OfferManagement = () => {
                   <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-semibold">{offer.category}</span>
                 </td>
                 <td className="p-4 text-sm text-gray-600">
-                  {offer.promoCode && <div>Mã: <span className="font-bold">{offer.promoCode}</span></div>}
+                  {offer.promoCode && (
+                    <div>
+                      Mã: <span className="font-bold">{offer.promoCode}</span>
+                      <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold">
+                        -{offer.discountType === 'percentage' ? `${offer.discountValue}%` : `${offer.discountValue?.toLocaleString('vi-VN')}đ`}
+                      </span>
+                    </div>
+                  )}
                   {offer.priceText && <div>Giá: <span className="font-bold text-yellow-600">{offer.priceText}</span></div>}
                 </td>
                 <td className="p-4 text-center">
@@ -159,10 +183,23 @@ const OfferManagement = () => {
 
               {/* RENDER CÓ ĐIỀU KIỆN DỰA VÀO DANH MỤC */}
               {formData.category === 'Mã giảm giá' && (
-                <div className="col-span-2 md:col-span-1">
-                  <label className="text-sm font-bold mb-1 block text-blue-600">Nhập mã giảm giá <span className="text-red-500">*</span></label>
-                  <input type="text" value={formData.promoCode} onChange={e => setFormData({...formData, promoCode: e.target.value.toUpperCase()})} placeholder="VD: SUMMER2024" className="w-full border border-blue-300 rounded-lg p-2.5 outline-none focus:border-blue-500 uppercase font-bold" />
-                </div>
+                <>
+                  <div className="col-span-2 md:col-span-1">
+                    <label className="text-sm font-bold mb-1 block text-blue-600">Nhập mã giảm giá <span className="text-red-500">*</span></label>
+                    <input type="text" value={formData.promoCode} onChange={e => setFormData({...formData, promoCode: e.target.value.toUpperCase()})} placeholder="VD: SUMMER2024" className="w-full border border-blue-300 rounded-lg p-2.5 outline-none focus:border-blue-500 uppercase font-bold" />
+                  </div>
+                  <div className="col-span-2 md:col-span-1">
+                    <label className="text-sm font-bold mb-1 block text-blue-600">Loại giảm giá <span className="text-red-500">*</span></label>
+                    <select value={formData.discountType} onChange={e => setFormData({...formData, discountType: e.target.value})} className="w-full border border-blue-300 rounded-lg p-2.5 outline-none focus:border-blue-500 bg-white">
+                      <option value="percentage">Phần trăm (%)</option>
+                      <option value="fixed">Số tiền cố định (đ)</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2 md:col-span-1">
+                    <label className="text-sm font-bold mb-1 block text-blue-600">Giá trị giảm giá <span className="text-red-500">*</span></label>
+                    <input type="number" value={formData.discountValue} onChange={e => setFormData({...formData, discountValue: Number(e.target.value)})} placeholder={formData.discountType === 'percentage' ? "Ví dụ: 10, 20..." : "Ví dụ: 50000, 100000..."} className="w-full border border-blue-300 rounded-lg p-2.5 outline-none focus:border-blue-500" />
+                  </div>
+                </>
               )}
 
               {formData.category === 'Gói Combo' && (
