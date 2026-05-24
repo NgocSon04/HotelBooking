@@ -4,10 +4,11 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 const AdminRoute = () => {
   // Lấy thông tin quyền của người dùng từ localStorage
-  const role = localStorage.getItem('role'); 
+  const user = JSON.parse(localStorage.getItem('user'));
+  const role = user ? user.role : null;
 
   // Nếu không phải admin (có thể là client hoặc chưa đăng nhập) -> Đá về trang chủ
-  if (role !== 'admin') {
+  if (role !== 'Admin') {
     // Bạn có thể đổi to="/" thành to="/login" tùy ý đồ của nhóm
     return <Navigate to="/" replace />; 
   }
