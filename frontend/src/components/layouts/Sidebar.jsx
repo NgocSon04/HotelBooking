@@ -42,6 +42,13 @@ const Sidebar = () => {
     { name: 'Cài đặt', icon: <FiSettings className="w-5 h-5" />, path: '/admin/settings' },
   ];
 
+  const filteredMenuItems = menuItems.filter(item => {
+    if (adminUser?.role === 'Staff') {
+      return item.path !== '/admin/accounts' && item.path !== '/admin/revenue';
+    }
+    return true;
+  });
+
   return (
     <div className="w-64 h-screen bg-[#0b142f] text-white flex flex-col fixed left-0 top-0 z-50 shadow-2xl">
       {/* Logo */}
@@ -62,7 +69,7 @@ const Sidebar = () => {
         </div>
         <div className="overflow-hidden">
           <p className="text-[10px] uppercase tracking-tighter text-[#facc15] font-bold">
-            {adminUser?.role || 'Quản trị viên'}
+            {adminUser?.role === 'Admin' ? 'Quản trị viên' : adminUser?.role === 'Staff' ? 'Nhân viên' : (adminUser?.role || 'Quản trị viên')}
           </p>
           <p className="text-sm font-bold text-white truncate">
             {adminUser ? adminUser.fullName : 'Đang tải...'}
@@ -75,7 +82,7 @@ const Sidebar = () => {
 
       {/* Navigation Menu */}
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
-        {menuItems.map((item, index) => {
+        {filteredMenuItems.map((item, index) => {
           const isActive = location.pathname === item.path;
           
           return (

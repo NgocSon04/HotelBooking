@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 import { FiPlus, FiEdit, FiTrash2, FiX, FiCheckCircle, FiEyeOff } from 'react-icons/fi';
 import { ToastContainer, toast } from 'react-toastify';
 
 const OfferManagement = () => {
+  const { searchQuery = '' } = useOutletContext() || {};
   const [offers, setOffers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -104,6 +106,16 @@ const OfferManagement = () => {
     } catch (err) { toast.error("Lỗi khi lưu ưu đãi!"); }
   };
 
+  const filteredOffers = offers.filter(offer => {
+    const term = searchQuery.toLowerCase();
+    return (
+      offer.title?.toLowerCase().includes(term) ||
+      offer.category?.toLowerCase().includes(term) ||
+      offer.promoCode?.toLowerCase().includes(term) ||
+      offer.description?.toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="p-6">
       <ToastContainer />
@@ -127,7 +139,9 @@ const OfferManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {offers.map(offer => (
+            {filteredOffers.length === 0 ? (
+              <tr><td colSpan="6" className="p-4 text-center text-gray-500">Không tìm thấy ưu đãi phù hợp.</td></tr>
+            ) : filteredOffers.map(offer => (
               <tr key={offer._id} className={`border-b hover:bg-gray-50 ${!offer.isActive ? 'opacity-60 bg-gray-50' : ''}`}>
                 <td className="p-4">
                   {offer.image ? <img src={offer.image} alt="offer" className="w-16 h-12 object-cover rounded shadow-sm" /> : <div className="w-16 h-12 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">No Img</div>}

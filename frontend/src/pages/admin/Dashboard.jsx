@@ -14,6 +14,9 @@ const Dashboard = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const user = JSON.parse(localStorage.getItem('user'));
+    const isStaff = user?.role === 'Staff';
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -69,23 +72,25 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* 4 Thẻ KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Thẻ KPIs */}
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${isStaff ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-6`}>
                 {/* Doanh thu */}
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-36 relative overflow-hidden">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm text-gray-500 font-medium">Tổng doanh thu</p>
-                            <h3 className="text-2xl font-bold text-[#0b142f] mt-1">{formatCurrency(kpis.totalRevenue)}</h3>
+                {!isStaff && (
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-36 relative overflow-hidden">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="text-sm text-gray-500 font-medium">Tổng doanh thu</p>
+                                <h3 className="text-2xl font-bold text-[#0b142f] mt-1">{formatCurrency(kpis.totalRevenue)}</h3>
+                            </div>
+                            <div className="p-2 bg-blue-50 rounded-lg">
+                                <BiMoney className="w-6 h-6 text-[#0b142f]" />
+                            </div>
                         </div>
-                        <div className="p-2 bg-blue-50 rounded-lg">
-                            <BiMoney className="w-6 h-6 text-[#0b142f]" />
+                        <div className="flex items-center gap-1 text-sm text-emerald-500 font-medium">
+                            <FiTrendingUp /> <span>+12.5%</span> <span className="text-gray-400 font-normal text-xs ml-1">so với hôm qua</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1 text-sm text-emerald-500 font-medium">
-                        <FiTrendingUp /> <span>+12.5%</span> <span className="text-gray-400 font-normal text-xs ml-1">so với hôm qua</span>
-                    </div>
-                </div>
+                )}
 
                 {/* Đơn đặt */}
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-36">
@@ -138,50 +143,52 @@ const Dashboard = () => {
             </div>
 
             {/* Biểu đồ */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
+            <div className={`grid grid-cols-1 ${isStaff ? 'lg:grid-cols-1 max-w-xl mx-auto w-full' : 'lg:grid-cols-3'} gap-6 h-[400px]`}>
                 {/* Bar Chart */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full flex flex-col">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-semibold text-gray-700">Doanh thu 7 ngày qua</h3>
-                        <button className="text-gray-400 hover:text-gray-600"><svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg></button>
+                {!isStaff && (
+                    <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full flex flex-col">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-semibold text-gray-700">Doanh thu 7 ngày qua</h3>
+                            <button className="text-gray-400 hover:text-gray-600"><svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg></button>
+                        </div>
+                        <div className="flex-1 w-full min-h-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={revenueChart} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                                    <XAxis 
+                                        dataKey="dayName" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fill: '#9ca3af', fontSize: 12 }} 
+                                        dy={10}
+                                    />
+                                    <YAxis 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                        tickFormatter={(value) => value >= 1000000 ? `${value / 1000000}M` : value}
+                                    />
+                                    <RechartsTooltip 
+                                        cursor={{ fill: '#f3f4f6' }}
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                        formatter={(value) => [`${value.toLocaleString()} ₫`, 'Doanh thu']}
+                                        labelStyle={{ color: '#374151', fontWeight: 'bold', marginBottom: '4px' }}
+                                    />
+                                    <Bar 
+                                        dataKey="revenue" 
+                                        fill="#0b142f" 
+                                        radius={[4, 4, 0, 0]} 
+                                        barSize={40}
+                                    >
+                                        {revenueChart.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={index === 4 ? '#a18042' : '#0b142f'} /> 
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
-                    <div className="flex-1 w-full min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={revenueChart} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                <XAxis 
-                                    dataKey="dayName" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: '#9ca3af', fontSize: 12 }} 
-                                    dy={10}
-                                />
-                                <YAxis 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
-                                    tickFormatter={(value) => value >= 1000000 ? `${value / 1000000}M` : value}
-                                />
-                                <RechartsTooltip 
-                                    cursor={{ fill: '#f3f4f6' }}
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(value) => [`${value.toLocaleString()} ₫`, 'Doanh thu']}
-                                    labelStyle={{ color: '#374151', fontWeight: 'bold', marginBottom: '4px' }}
-                                />
-                                <Bar 
-                                    dataKey="revenue" 
-                                    fill="#0b142f" 
-                                    radius={[4, 4, 0, 0]} 
-                                    barSize={40}
-                                >
-                                    {revenueChart.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={index === 4 ? '#a18042' : '#0b142f'} /> 
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+                )}
 
                 {/* Donut Chart */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full flex flex-col items-center relative">

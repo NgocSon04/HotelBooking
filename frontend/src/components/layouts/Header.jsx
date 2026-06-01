@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiBell, FiChevronDown } from 'react-icons/fi';
+import { FiSearch, FiBell } from 'react-icons/fi';
 
-const Header = () => {
+const Header = ({ searchQuery, setSearchQuery }) => {
   const [adminUser, setAdminUser] = useState(null);
 
   useEffect(() => {
@@ -20,6 +20,8 @@ const Header = () => {
           <input
             type="text"
             placeholder="Tìm kiếm phòng, khách hàng, mã đặt..."
+            value={searchQuery || ''}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-gray-50 text-sm text-gray-700 rounded-full pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-100 border border-transparent focus:border-blue-200 transition-all"
           />
         </div>
@@ -42,9 +44,10 @@ const Header = () => {
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-gray-700">{adminUser ? adminUser.fullName : 'Nguyễn Văn A'}</p>
-            <p className="text-xs text-gray-500">{adminUser?.role || 'Admin'}</p>
+            <p className="text-xs text-gray-500">
+              {adminUser?.role === 'Admin' ? 'Quản trị viên' : adminUser?.role === 'Staff' ? 'Nhân viên' : (adminUser?.role || 'Admin')}
+            </p>
           </div>
-          <FiChevronDown className="text-gray-400 ml-1" />
         </button>
       </div>
     </header>

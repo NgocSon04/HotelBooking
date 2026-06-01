@@ -1,10 +1,12 @@
 // src/components/layouts/AdminLayout.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 const AdminLayout = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
     <div className="flex min-h-screen bg-[#f8f9fc]">
       {/* Sidebar fixed bên trái */}
@@ -12,11 +14,11 @@ const AdminLayout = () => {
 
       {/* Phần nội dung chính nằm bên phải Sidebar */}
       <div className="flex-1 ml-64 flex flex-col">
-        <Header />
+        <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
         {/* Nơi chứa các trang con (Dashboard, Quản lý phòng...) */}
         <main className="flex-1 p-8">
-          <Outlet />
+          <Outlet context={{ searchQuery }} />
         </main>
       </div>
     </div>

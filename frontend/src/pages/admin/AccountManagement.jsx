@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 import { FiSearch, FiEdit, FiTrash2, FiPlus, FiX } from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
 
 const AccountManagement = () => {
+  const { searchQuery = '', setSearchQuery = () => {} } = useOutletContext() || {};
   const [users, setUsers] = useState([]);
   
   // State quản lý Modal Thêm/Sửa
@@ -83,6 +85,15 @@ const AccountManagement = () => {
     }
   };
 
+  const filteredUsers = users.filter(user => {
+    const term = searchQuery.toLowerCase();
+    return (
+      user.fullName?.toLowerCase().includes(term) ||
+      user.email?.toLowerCase().includes(term) ||
+      user.phone?.includes(term)
+    );
+  });
+
   return (
     <div className="p-6 font-sans">
       <ToastContainer position="bottom-right" />
@@ -112,12 +123,18 @@ const AccountManagement = () => {
 
       {/* Bảng Dữ Liệu */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b bg-white flex">
-           <div className="flex bg-gray-50 border rounded-lg px-3 py-2 w-80">
-             <FiSearch className="text-gray-400 mt-1 mr-2"/>
-             <input type="text" placeholder="Tìm kiếm tên, email, SĐT..." className="outline-none w-full text-sm bg-transparent"/>
-           </div>
-        </div>
+         <div className="p-4 border-b bg-white flex">
+            <div className="flex bg-gray-50 border rounded-lg px-3 py-2 w-80">
+              <FiSearch className="text-gray-400 mt-1 mr-2"/>
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm kiếm tên, email, SĐT..." 
+                className="outline-none w-full text-sm bg-transparent"
+              />
+            </div>
+         </div>
 
         <table className="w-full text-left">
           <thead className="bg-gray-50 border-b text-xs text-gray-500 uppercase font-bold tracking-wider">
@@ -132,7 +149,9 @@ const AccountManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map(user => (
+            {filteredUsers.length === 0 ? (
+              <tr><td colSpan="7" className="p-4 text-center text-gray-500">Không tìm thấy tài khoản phù hợp.</td></tr>
+            ) : filteredUsers.map(user => (
               <tr key={user._id} className="border-b hover:bg-gray-50 transition">
                 <td className="p-4">
                   <img src={user.avatar || 'https://i.pravatar.cc/150'} className="w-10 h-10 rounded-full object-cover shadow-sm" alt="avatar"/>

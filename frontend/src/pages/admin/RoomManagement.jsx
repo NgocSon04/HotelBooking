@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 import { FiEdit, FiTrash2, FiPlus, FiX } from 'react-icons/fi';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const RoomManagement = () => {
+  const { searchQuery = '' } = useOutletContext() || {};
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -148,6 +150,16 @@ const RoomManagement = () => {
     }
   };
 
+  const filteredRooms = rooms.filter(room => {
+    const term = searchQuery.toLowerCase();
+    return (
+      room.roomName?.toLowerCase().includes(term) ||
+      room.roomType?.toLowerCase().includes(term) ||
+      room.description?.toLowerCase().includes(term) ||
+      (room.amenities && room.amenities.some(amenity => amenity.toLowerCase().includes(term)))
+    );
+  });
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen relative">
       <ToastContainer position="top-right" autoClose={3000} />
@@ -178,7 +190,9 @@ const RoomManagement = () => {
           <tbody>
             {loading ? (
               <tr><td colSpan="7" className="p-4 text-center text-gray-500">Đang tải dữ liệu...</td></tr>
-            ) : rooms.map((room) => (
+            ) : filteredRooms.length === 0 ? (
+              <tr><td colSpan="7" className="p-4 text-center text-gray-500">Không tìm thấy phòng phù hợp.</td></tr>
+            ) : filteredRooms.map((room) => (
               <tr key={room._id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="p-4">
                   <img src={(room.images && room.images.length > 0) ? room.images[0] : "https://via.placeholder.com/80x50"} alt="room" className="w-16 h-10 object-cover rounded border" />

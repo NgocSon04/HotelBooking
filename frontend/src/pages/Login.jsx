@@ -117,7 +117,7 @@ const Login = () => {
                 <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-[#8c6b23] focus:ring-[#8c6b23]" />
                 <span className="font-medium">Ghi nhớ đăng nhập</span>
               </label>
-              <Link to="#" className="text-[#8c6b23] font-bold hover:underline">Quên mật khẩu?</Link>
+              <Link to="/forgot-password" className="text-[#8c6b23] font-bold hover:underline">Quên mật khẩu?</Link>
             </div>
 
             {/* Submit Button */}

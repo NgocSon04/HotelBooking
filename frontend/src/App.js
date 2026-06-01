@@ -25,6 +25,8 @@ import BookingManagement from './pages/admin/BookingManagement';
 import BookingHistory from './pages/BookingHistory';
 import Settings from './pages/admin/Settings';
 import Checkout from './pages/Checkout';
+import Contact from './pages/Contact';
+import ForgotPassword from './pages/ForgotPassword';
 
 function App() {
   return (
@@ -46,6 +48,7 @@ function App() {
           <Route path="/offers" element={<Offers />} />
           <Route path="/my-offers" element={<MyOffers />} />
           <Route path="/history" element={<BookingHistory />} />
+          <Route path="/contact" element={<Contact />} />
         </Route>
 
         {/* Trang Checkout (độc lập, không dùng ClientLayout) */}
@@ -54,6 +57,7 @@ function App() {
         {/* Trang Đăng nhập/Đăng ký*/}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
 
         {/* ================= ROUTES CHO ADMIN (Quản trị viên) ================= */}

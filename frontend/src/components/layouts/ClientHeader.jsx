@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiGlobe, FiMoon, FiLogOut, FiClock, FiGift } from 'react-icons/fi';
+import { FiLogOut, FiClock, FiGift } from 'react-icons/fi';
 
 const ClientHeader = () => {
   const location = useLocation();
@@ -41,20 +41,10 @@ const ClientHeader = () => {
         <Link to="/rooms" className={`transition pb-1 border-b-2 ${isActive('/rooms') ? 'text-[#8c6b23] border-[#8c6b23]' : 'border-transparent hover:text-[#8c6b23]'}`}>Loại phòng</Link>
         <Link to="/services" className={`transition pb-1 border-b-2 ${isActive('/services') ? 'text-[#8c6b23] border-[#8c6b23]' : 'border-transparent hover:text-[#8c6b23]'}`}>Dịch vụ</Link>
         <Link to="/offers" className={`transition pb-1 border-b-2 ${isActive('/offers') ? 'text-[#8c6b23] border-[#8c6b23]' : 'border-transparent hover:text-[#8c6b23]'}`}>Ưu đãi</Link>
-        <a 
-          href="#footer-contact" 
-          onClick={(e) => {
-            e.preventDefault();
-            document.getElementById('footer-contact')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          className={`transition pb-1 border-b-2 cursor-pointer border-transparent hover:text-[#8c6b23]`}
-        >
-          Liên hệ
-        </a>
+        <Link to="/contact" className={`transition pb-1 border-b-2 ${isActive('/contact') ? 'text-[#8c6b23] border-[#8c6b23]' : 'border-transparent hover:text-[#8c6b23]'}`}>Liên hệ</Link>
         
-        {/* ========================================== */}
         {/* NÚT QUẢN LÝ CHỈ HIỂN THỊ CHO ADMIN / STAFF */}
-        {/* ========================================== */}
+
         {user && (user.role === 'Admin' || user.role === 'Staff') && (
           <Link 
             to="/admin" 
@@ -66,8 +56,8 @@ const ClientHeader = () => {
       </nav>
 
       <div className="flex items-center space-x-4">
-        <button className="text-gray-600 hover:text-[#8c6b23]"><FiGlobe size={20} /></button>
-        <button className="text-gray-600 hover:text-[#8c6b23]"><FiMoon size={20} /></button>
+       
+       
         <div className="h-6 w-px bg-gray-300 mx-2"></div>
         
         {user ? (

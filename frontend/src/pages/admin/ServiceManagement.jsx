@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 import { FiPlus, FiEdit, FiTrash2, FiX } from 'react-icons/fi';
 import { ToastContainer, toast } from 'react-toastify';
 
 const ServiceManagement = () => {
+  const { searchQuery = '' } = useOutletContext() || {};
   const [services, setServices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -88,6 +90,15 @@ const ServiceManagement = () => {
     }
   };
 
+  const filteredServices = services.filter(svc => {
+    const term = searchQuery.toLowerCase();
+    return (
+      svc.serviceName?.toLowerCase().includes(term) ||
+      svc.type?.toLowerCase().includes(term) ||
+      svc.description?.toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="p-6">
       <ToastContainer />
@@ -112,7 +123,9 @@ const ServiceManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {services.map(svc => (
+            {filteredServices.length === 0 ? (
+              <tr><td colSpan="6" className="p-4 text-center text-gray-500">Không tìm thấy dịch vụ phù hợp.</td></tr>
+            ) : filteredServices.map(svc => (
               <tr key={svc._id} className="border-b hover:bg-gray-50">
                 <td className="p-4"><img src={svc.image} alt="Dịch vụ" className="w-12 h-12 object-cover rounded shadow-sm" /></td>
                 <td className="p-4 font-medium">{svc.serviceName}</td>
