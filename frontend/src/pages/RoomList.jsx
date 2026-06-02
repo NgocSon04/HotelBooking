@@ -31,6 +31,7 @@ const RoomList = () => {
   // Khai báo các tuỳ chọn bộ lọc (map với data thực tế từ DB)
   const typeMapping = {
     'Phòng Tiêu Chuẩn': 'Standard',
+    'Phòng Superior': 'Superior',
     'Phòng Cao Cấp (Deluxe)': 'Deluxe',
     'Suite': 'Suite',
     'Penthouse': 'Penthouse'

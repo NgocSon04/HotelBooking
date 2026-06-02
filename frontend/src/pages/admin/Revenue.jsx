@@ -12,17 +12,43 @@ import { Link } from 'react-router-dom';
 const Revenue = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState('month'); // 'day', 'month', 'year'
     
     // Mặc định lấy tháng/năm hiện tại
     const currentDate = new Date();
-    const [selectedYear] = useState(currentDate.getFullYear());
+    const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+
+    // Helpers to format date to YYYY-MM-DD
+    const formatDateStr = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+
+    // Mặc định 30 ngày gần đây cho chế độ Xem theo Ngày
+    const defaultStartDate = new Date();
+    defaultStartDate.setDate(defaultStartDate.getDate() - 30);
+
+    const [startDate, setStartDate] = useState(formatDateStr(defaultStartDate));
+    const [endDate, setEndDate] = useState(formatDateStr(currentDate));
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const result = await getRevenueReport(selectedYear, selectedMonth);
+                const params = { type: viewMode };
+                if (viewMode === 'day') {
+                    params.startDate = startDate;
+                    params.endDate = endDate;
+                } else if (viewMode === 'month') {
+                    params.year = selectedYear;
+                    params.month = selectedMonth;
+                } else if (viewMode === 'year') {
+                    params.year = selectedYear;
+                }
+                const result = await getRevenueReport(params);
                 setData(result);
             } catch (error) {
                 console.error("Lỗi khi fetch revenue data:", error);
@@ -31,7 +57,7 @@ const Revenue = () => {
             }
         };
         fetchData();
-    }, [selectedYear, selectedMonth]);
+    }, [viewMode, selectedYear, selectedMonth, startDate, endDate]);
 
     // Format tiền VNĐ
     const formatCurrency = (value) => {
@@ -45,13 +71,36 @@ const Revenue = () => {
         return value;
     };
 
+    const getChartTitle = () => {
+        if (viewMode === 'day') return `Doanh thu theo ngày`;
+        if (viewMode === 'month') return `Doanh thu các ngày trong tháng`;
+        return `Doanh thu các tháng trong năm`;
+    };
+
+    const getChartSubtitle = () => {
+        if (viewMode === 'day') return `${startDate} đến ${endDate}`;
+        if (viewMode === 'month') return `Tháng ${selectedMonth}/${selectedYear}`;
+        return `Năm ${selectedYear}`;
+    };
+
+    const getCellFill = (entry, index) => {
+        if (viewMode === 'year') {
+            return index + 1 === selectedMonth ? '#a18042' : '#0b142f';
+        }
+        const todayStr = new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        if (entry.name === todayStr) {
+            return '#a18042'; // Hôm nay
+        }
+        return '#0b142f';
+    };
+
     if (loading) {
         return <div className="flex items-center justify-center h-full">Đang tải dữ liệu doanh thu...</div>;
     }
 
     if (!data) return <div>Không có dữ liệu.</div>;
 
-    const { kpis, monthlyRevenueChart, bookingRatio, roomStats } = data;
+    const { kpis, revenueChart, bookingRatio, roomStats } = data;
 
     const PIE_COLORS = ['#0b142f', '#dc2626', '#e5e7eb']; // Dark Blue, Red, Light Gray
     const pieData = [
@@ -63,25 +112,89 @@ const Revenue = () => {
     return (
         <div className="space-y-6">
             {/* Tiêu đề & Bộ lọc */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold text-[#0b142f]">Doanh thu</h2>
                     <p className="text-sm text-gray-500 mt-1">Tổng quan tài chính và báo cáo chi tiết</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <select 
-                            className="appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 pl-10 pr-10 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-sm"
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Chế độ xem */}
+                    <div className="bg-gray-100 p-1 rounded-lg flex gap-1 shadow-inner border border-gray-200">
+                        <button 
+                            onClick={() => setViewMode('day')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition duration-200 ${viewMode === 'day' ? 'bg-[#0b142f] text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
                         >
-                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                <option key={m} value={m}>Tháng Này (Tháng {m}, {selectedYear})</option>
+                            Theo Ngày
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('month')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition duration-200 ${viewMode === 'month' ? 'bg-[#0b142f] text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                        >
+                            Theo Tháng
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('year')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition duration-200 ${viewMode === 'year' ? 'bg-[#0b142f] text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                        >
+                            Theo Năm
+                        </button>
+                    </div>
+
+                    {/* Bộ lọc theo chế độ xem */}
+                    {viewMode === 'day' && (
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-white border border-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-sm cursor-pointer"
+                            />
+                            <span className="text-gray-400 text-sm">đến</span>
+                            <input 
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-white border border-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-sm cursor-pointer"
+                            />
+                        </div>
+                    )}
+
+                    {viewMode === 'month' && (
+                        <div className="flex items-center gap-2">
+                            <select 
+                                className="bg-white border border-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-sm"
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                            >
+                                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                    <option key={m} value={m}>Tháng {m}</option>
+                                ))}
+                            </select>
+                            <select 
+                                className="bg-white border border-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-sm"
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                            >
+                                {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map(y => (
+                                    <option key={y} value={y}>Năm {y}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {viewMode === 'year' && (
+                        <select 
+                            className="bg-white border border-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-sm"
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                        >
+                            {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map(y => (
+                                <option key={y} value={y}>Năm {y}</option>
                             ))}
                         </select>
-                        <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-                        <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
+                    )}
+
                     <button className="p-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition shadow-sm bg-white">
                         <FiDownload className="w-4 h-4 text-gray-600" />
                     </button>
@@ -102,7 +215,7 @@ const Revenue = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-[#a18042] font-medium mt-auto">
-                        <FiTrendingUp /> <span>+12.5% so với tháng trước</span>
+                        <FiTrendingUp /> <span>Thống kê theo thời gian chọn</span>
                     </div>
                 </div>
 
@@ -118,7 +231,7 @@ const Revenue = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-500 font-medium mt-auto">
-                        <FiTrendingUp /> <span>+5.2% so với tháng trước</span>
+                        <FiTrendingUp /> <span>Lượt booking trong kỳ</span>
                     </div>
                 </div>
 
@@ -134,7 +247,7 @@ const Revenue = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-500 font-medium mt-auto">
-                        <span className="text-gray-400">→</span> <span>Ổn định so với tháng trước</span>
+                        <span className="text-gray-400">→</span> <span>Doanh thu trung bình mỗi đơn đặt thành công</span>
                     </div>
                 </div>
             </div>
@@ -144,14 +257,14 @@ const Revenue = () => {
                 {/* Bar Chart */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full flex flex-col">
                     <div className="flex justify-between items-center mb-8">
-                        <h3 className="text-xl font-semibold text-[#0b142f]">Doanh thu theo tháng</h3>
-                        <div className="text-sm text-gray-500 flex items-center gap-1 cursor-pointer">
-                            Năm {selectedYear} <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <h3 className="text-xl font-semibold text-[#0b142f]">{getChartTitle()}</h3>
+                        <div className="text-sm text-gray-500 flex items-center gap-1">
+                            {getChartSubtitle()}
                         </div>
                     </div>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={monthlyRevenueChart} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                            <BarChart data={revenueChart} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                                 <XAxis 
                                     dataKey="name" 
@@ -176,10 +289,10 @@ const Revenue = () => {
                                     dataKey="revenue" 
                                     fill="#0b142f" 
                                     radius={[4, 4, 0, 0]} 
-                                    barSize={40}
+                                    barSize={viewMode === 'day' ? 20 : 40}
                                 >
-                                    {monthlyRevenueChart.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={index + 1 === selectedMonth ? '#a18042' : '#0b142f'} /> 
+                                    {revenueChart.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={getCellFill(entry, index)} /> 
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -234,58 +347,58 @@ const Revenue = () => {
                                 <div className="flex items-center gap-3">
                                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[index] }}></span>
                                     <span className="text-gray-700 font-medium">{item.name}</span>
+                                    </div>
+                                    <span className="text-gray-500">
+                                        {bookingRatio.total > 0 ? Math.round((item.value / bookingRatio.total) * 100) : 0}%
+                                    </span>
                                 </div>
-                                <span className="text-gray-500">
-                                    {bookingRatio.total > 0 ? Math.round((item.value / bookingRatio.total) * 100) : 0}%
-                                </span>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bảng Thống kê doanh thu theo loại phòng */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h3 className="text-xl font-semibold text-[#0b142f]">Thống kê doanh thu theo loại phòng</h3>
+                        <Link to="/admin/rooms" className="text-sm font-medium text-[#a18042] hover:underline flex items-center gap-1">
+                            Xem tất cả <span className="text-lg">→</span>
+                        </Link>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider font-semibold">
+                                    <th className="px-6 py-4">Loại phòng</th>
+                                    <th className="px-6 py-4">Số lượng bán</th>
+                                    <th className="px-6 py-4">Khách phục vụ</th>
+                                    <th className="px-6 py-4">Giá trung bình</th>
+                                    <th className="px-6 py-4">Tổng doanh thu</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {roomStats.map((stat, index) => (
+                                    <tr key={index} className="hover:bg-gray-50/50 transition">
+                                        <td className="px-6 py-4 font-medium text-sm text-[#0b142f]">{stat.roomType}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">{stat.sold}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">{stat.capacity}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">{formatCurrency(stat.avgPrice)}</td>
+                                        <td className="px-6 py-4 font-bold text-sm text-[#0b142f]">
+                                            {formatCurrency(stat.totalRevenue)}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {roomStats.length === 0 && (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu thống kê loại phòng trong kỳ này</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-
-            {/* Bảng Thống kê doanh thu theo loại phòng */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                    <h3 className="text-xl font-semibold text-[#0b142f]">Thống kê doanh thu theo loại phòng</h3>
-                    <Link to="/admin/rooms" className="text-sm font-medium text-[#a18042] hover:underline flex items-center gap-1">
-                        Xem tất cả <span className="text-lg">→</span>
-                    </Link>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider font-semibold">
-                                <th className="px-6 py-4">Loại phòng</th>
-                                <th className="px-6 py-4">Số lượng bán</th>
-                                <th className="px-6 py-4">Khách phục vụ</th>
-                                <th className="px-6 py-4">Giá trung bình</th>
-                                <th className="px-6 py-4">Tổng doanh thu</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {roomStats.map((stat, index) => (
-                                <tr key={index} className="hover:bg-gray-50/50 transition">
-                                    <td className="px-6 py-4 font-medium text-sm text-[#0b142f]">{stat.roomType}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{stat.sold}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{stat.capacity}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{formatCurrency(stat.avgPrice)}</td>
-                                    <td className="px-6 py-4 font-bold text-sm text-[#0b142f]">
-                                        {formatCurrency(stat.totalRevenue)}
-                                    </td>
-                                </tr>
-                            ))}
-                            {roomStats.length === 0 && (
-                                <tr>
-                                    <td colSpan="5" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu thống kê loại phòng trong tháng này</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    );
+        );
 };
 
 export default Revenue;

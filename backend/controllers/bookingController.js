@@ -122,7 +122,7 @@ exports.getAllBookings = async (req, res) => {
         // Dùng populate để kéo thông tin từ bảng User và Room sang
         const bookings = await Booking.find()
             .populate('user', 'fullName phone email')
-            .populate('room', 'roomName type price')
+            .populate('room', 'roomName roomType price')
             .sort({ createdAt: -1 });
         res.status(200).json(bookings);
     } catch (error) {
@@ -145,7 +145,7 @@ exports.updateBookingStatus = async (req, res) => {
 exports.getUserBookings = async (req, res) => {
     try {
         const bookings = await Booking.find({ user: req.params.userId })
-            .populate('room', 'roomName type images') // Lấy thêm ảnh và tên phòng
+            .populate('room', 'roomName roomType images') // Lấy thêm ảnh và tên phòng
             .sort({ createdAt: -1 });
         res.status(200).json(bookings);
     } catch (error) {

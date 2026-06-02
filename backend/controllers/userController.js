@@ -59,13 +59,12 @@ exports.updateUser = async (req, res) => {
     }
 };
 
-// 4. Xóa User
+// 4. Xóa User (Đã bị vô hiệu hóa - Chỉ cho phép Khóa tài khoản)
 exports.deleteUser = async (req, res) => {
     try {
-        await User.findByIdAndDelete(req.params.id);
-        res.status(200).json({ message: "Xóa tài khoản thành công!" });
+        res.status(400).json({ message: "Hệ thống không cho phép xóa tài khoản, vui lòng sử dụng chức năng Khóa tài khoản!" });
     } catch (error) {
-        res.status(500).json({ message: "Lỗi khi xóa tài khoản" });
+        res.status(500).json({ message: "Lỗi khi xử lý yêu cầu" });
     }
 };
 
@@ -118,5 +117,68 @@ exports.getSavedOffers = async (req, res) => {
         res.status(200).json(user.savedOffers || []);
     } catch (error) {
         res.status(500).json({ message: "Lỗi khi lấy danh sách ưu đãi đã lưu", error });
+    }
+};
+
+// 8. Lấy thông tin chi tiết một User theo ID
+exports.getUserById = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('-password');
+        if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+        res.status(200).json(user);
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi khi lấy thông tin tài khoản" });
+    }
+};
+
+// 9. Cập nhật thông tin cá nhân (Profile & Mật khẩu)
+exports.updateProfile = async (req, res) => {
+    try {
+        const { fullName, phone, password, avatar } = req.body;
+        const userId = req.params.id;
+
+        const updateData = {};
+        if (fullName) updateData.fullName = fullName;
+        if (phone) updateData.phone = phone;
+        
+        if (req.file) {
+            updateData.avatar = `http://localhost:5000/uploads/${req.file.filename}`;
+        } else if (avatar) {
+            updateData.avatar = avatar;
+        }
+
+        // Nếu có đổi mật khẩu mới
+        if (password && password.trim() !== '') {
+            if (password.length < 6) {
+                return res.status(400).json({ message: "Mật khẩu mới phải có ít nhất 6 ký tự!" });
+            }
+            const salt = await bcrypt.genSalt(10);
+            updateData.password = await bcrypt.hash(password, salt);
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            updateData,
+            { new: true } // Trả về data mới sau update
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+        }
+
+        res.status(200).json({ 
+            message: "Cập nhật thông tin cá nhân thành công!", 
+            user: {
+                id: updatedUser._id,
+                fullName: updatedUser.fullName,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                avatar: updatedUser.avatar,
+                phone: updatedUser.phone
+            }
+        });
+    } catch (error) {
+        console.error("Lỗi cập nhật profile:", error);
+        res.status(500).json({ message: "Lỗi server khi cập nhật thông tin cá nhân!" });
     }
 };

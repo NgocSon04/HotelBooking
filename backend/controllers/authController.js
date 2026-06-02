@@ -51,7 +51,7 @@ exports.login = async (req, res) => {
 
         res.status(200).json({
             token,
-            user: { id: user._id, fullName: user.fullName, email: user.email, role: user.role, avatar: user.avatar }
+            user: { id: user._id, fullName: user.fullName, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone }
         });
     } catch (error) {
         res.status(500).json({ message: "Lỗi server khi đăng nhập" });

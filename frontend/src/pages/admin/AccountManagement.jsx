@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import { FiSearch, FiEdit, FiTrash2, FiPlus, FiX } from 'react-icons/fi';
+import { FiSearch, FiEdit, FiLock, FiUnlock, FiPlus, FiX } from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
 
 const AccountManagement = () => {
@@ -54,14 +54,29 @@ const AccountManagement = () => {
     setShowModal(true);
   };
 
-  // Bấm nút Xóa
-  const handleDelete = async (id) => {
-    if(window.confirm('Cảnh báo: Bạn có chắc chắn muốn xóa tài khoản này vĩnh viễn?')) {
+  // Bấm nút Khóa / Mở khóa tài khoản
+  const handleToggleBlock = async (user) => {
+    const isBlocking = user.status === 'Hoạt động';
+    const confirmMsg = isBlocking 
+      ? `Bạn có chắc chắn muốn khóa tài khoản "${user.fullName || user.email}"?`
+      : `Bạn có chắc chắn muốn mở khóa tài khoản "${user.fullName || user.email}"?`;
+    
+    if (window.confirm(confirmMsg)) {
       try {
-        await axios.delete(`http://localhost:5000/api/users/${id}`);
-        toast.success("Đã xóa tài khoản thành công!");
+        const updatedStatus = isBlocking ? 'Đã khóa' : 'Hoạt động';
+        
+        await axios.put(`http://localhost:5000/api/users/${user._id}`, {
+          fullName: user.fullName,
+          phone: user.phone,
+          role: user.role,
+          status: updatedStatus
+        });
+        
+        toast.success(isBlocking ? "Đã khóa tài khoản thành công!" : "Đã mở khóa tài khoản thành công!");
         fetchUsers();
-      } catch (error) { toast.error("Lỗi khi xóa tài khoản!"); }
+      } catch (error) { 
+        toast.error(error.response?.data?.message || "Lỗi khi cập nhật trạng thái tài khoản!"); 
+      }
     }
   };
 
@@ -177,7 +192,15 @@ const AccountManagement = () => {
                 </td>
                 <td className="p-4 flex justify-center gap-4 text-gray-400">
                   <button onClick={() => handleOpenEdit(user)} title="Sửa" className="hover:text-blue-600 transition"><FiEdit size={18}/></button>
-                  <button onClick={() => handleDelete(user._id)} title="Xóa" className="hover:text-red-600 transition"><FiTrash2 size={18}/></button>
+                  {user.status === 'Hoạt động' ? (
+                    <button onClick={() => handleToggleBlock(user)} title="Khóa tài khoản" className="hover:text-red-600 transition">
+                      <FiLock size={18}/>
+                    </button>
+                  ) : (
+                    <button onClick={() => handleToggleBlock(user)} title="Mở khóa tài khoản" className="hover:text-green-600 transition">
+                      <FiUnlock size={18}/>
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

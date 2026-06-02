@@ -12,7 +12,7 @@ const getDashboardSummary = async (req, res) => {
 
         // 1. Tính tổng doanh thu (Những đơn không bị hủy)
         const revenueResult = await Booking.aggregate([
-            { $match: { status: { $ne: 'Đã hủy' } } },
+            { $match: { status: { $in: ['Đã xác nhận', 'Đang lưu trú', 'Đã trả phòng'] } } },
             { $group: { _id: null, totalRevenue: { $sum: "$totalPrice" } } }
         ]);
         const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
@@ -46,7 +46,7 @@ const getDashboardSummary = async (req, res) => {
         const revenueByDate = await Booking.aggregate([
             { 
                 $match: { 
-                    status: { $ne: 'Đã hủy' },
+                    status: { $in: ['Đã xác nhận', 'Đang lưu trú', 'Đã trả phòng'] },
                     createdAt: { $gte: startOfLastWeek }
                 } 
             },

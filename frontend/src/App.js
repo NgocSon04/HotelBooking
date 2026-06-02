@@ -66,9 +66,7 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="rooms" element={<RoomManagement />} />
-            {/* Thêm các trang Quản lý đặt phòng, Quản lý user tại đây */}
-              <Route path="rooms" element={<RoomManagement />} />
-              <Route path="services" element={<ServiceManagement />} />
+            <Route path="services" element={<ServiceManagement />} />
               <Route path="offers" element={<OfferManagement />} /> 
               <Route path="accounts" element={<AccountManagement />} />
               <Route path="bookings" element={<BookingManagement />} />

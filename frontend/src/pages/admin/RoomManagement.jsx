@@ -16,7 +16,7 @@ const RoomManagement = () => {
   // 1. THÊM CÁC TRƯỜNG MỚI VÀO STATE
   const [formData, setFormData] = useState({
     roomName: '',
-    roomType: 'Deluxe King',
+    roomType: 'Standard',
     price: '',
     quantity: 5,
     size: '',
@@ -62,7 +62,7 @@ const RoomManagement = () => {
   const handleOpenAddForm = () => {
     setEditingId(null);
     setFormData({ 
-      roomName: '', roomType: 'Deluxe King', price: '', quantity: 5,
+      roomName: '', roomType: 'Standard', price: '', quantity: 5,
       size: '', capacity: '', bedType: '', description: '', amenities: '' 
     });
     setImageFiles([]);
@@ -258,8 +258,9 @@ const RoomManagement = () => {
                 <div className="flex-1">
                   <label className="block text-sm font-bold text-gray-700 mb-1">Loại phòng</label>
                   <select name="roomType" value={formData.roomType} onChange={handleInputChange} className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8c6b23] outline-none">
-                    <option value="Phòng Tiêu Chuẩn">Phòng Tiêu Chuẩn</option>
-                    <option value="Phòng Cao Cấp (Deluxe)">Phòng Cao Cấp (Deluxe)</option>
+                    <option value="Standard">Phòng Tiêu Chuẩn (Standard)</option>
+                    <option value="Superior">Phòng Superior</option>
+                    <option value="Deluxe">Phòng Cao Cấp (Deluxe)</option>
                     <option value="Suite">Suite</option>
                     <option value="Penthouse">Penthouse</option>
                   </select>

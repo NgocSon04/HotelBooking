@@ -21,7 +21,7 @@ const ClientFooter = () => {
             shortDescription: response.data.shortDescription || 'Mang đến trải nghiệm lưu trú đẳng cấp, kết hợp giữa sự vững chãi của truyền thống và tiện nghi hiện đại.',
             email: response.data.email || 'info@sonquanbooking.vn',
             phone: response.data.phone || '+84 236 388 8888',
-            address: response.data.address || '123 Đường Ngọc Trai, Quận Hải Châu, TP. Đà Nẵng'
+            address: response.data.address || 'Đại Kim, Hoàng Mai, Hà Nội'
           });
         }
       } catch (error) {

@@ -4,59 +4,114 @@ const mongoose = require('mongoose');
 
 const getRevenueReport = async (req, res) => {
     try {
-        const queryYear = parseInt(req.query.year) || new Date().getFullYear();
-        const queryMonth = parseInt(req.query.month) || new Date().getMonth() + 1;
+        const { type = 'month', year, month, startDate, endDate } = req.query;
+        
+        let start, end;
+        let chartMap = {};
+        let groupByType = 'day'; // 'day' hoặc 'month'
 
-        // 1. Dữ liệu cho tháng đang chọn
-        const startOfMonth = new Date(queryYear, queryMonth - 1, 1);
-        const endOfMonth = new Date(queryYear, queryMonth, 0, 23, 59, 59, 999);
+        const currentYear = parseInt(year) || new Date().getFullYear();
+        const currentMonth = parseInt(month) || new Date().getMonth() + 1;
 
-        // Lấy tất cả booking trong tháng
-        const monthlyBookings = await Booking.find({
-            createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+        if (type === 'day') {
+            // Theo khoảng ngày
+            if (!startDate || !endDate) {
+                return res.status(400).json({ message: "Thiếu tham số startDate hoặc endDate cho thống kê theo ngày!" });
+            }
+            start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+
+            end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+
+            // Tạo các ngày trong khoảng ngày để làm khung biểu đồ
+            let temp = new Date(start);
+            while (temp <= end) {
+                const key = temp.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                chartMap[key] = 0;
+                temp.setDate(temp.getDate() + 1);
+            }
+            groupByType = 'day';
+        } else if (type === 'year') {
+            // Theo năm
+            start = new Date(currentYear, 0, 1);
+            end = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+            // Tạo 12 tháng làm khung biểu đồ
+            for (let m = 1; m <= 12; m++) {
+                chartMap[`T${m}`] = 0;
+            }
+            groupByType = 'month';
+        } else {
+            // Theo tháng (mặc định)
+            start = new Date(currentYear, currentMonth - 1, 1);
+            end = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999);
+
+            // Tạo các ngày trong tháng làm khung biểu đồ
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dayStr = d < 10 ? `0${d}` : `${d}`;
+                const monthStr = currentMonth < 10 ? `0${currentMonth}` : `${currentMonth}`;
+                chartMap[`${dayStr}/${monthStr}`] = 0;
+            }
+            groupByType = 'day';
+        }
+
+        // Lấy tất cả bookings trong khoảng thời gian xác định
+        const bookings = await Booking.find({
+            createdAt: { $gte: start, $lte: end }
         }).populate('room');
 
         let totalRevenue = 0;
-        let totalBookingsCount = monthlyBookings.length;
-        
-        // Thống kê trạng thái (Thành công, Đã hủy, Chờ duyệt)
+        let totalBookingsCount = bookings.length;
         let successCount = 0;
         let cancelledCount = 0;
         let pendingCount = 0;
-
-        // Thống kê theo loại phòng
         const roomStatsMap = {};
 
-        monthlyBookings.forEach(booking => {
+        bookings.forEach(booking => {
+            const isSuccess = ['Đã xác nhận', 'Đang lưu trú', 'Đã trả phòng'].includes(booking.status);
+            
             // Gom nhóm trạng thái
-            if (['Đã xác nhận', 'Đang lưu trú', 'Đã trả phòng'].includes(booking.status)) {
+            if (isSuccess) {
                 successCount++;
-                totalRevenue += booking.totalPrice; // Chỉ tính doanh thu cho đơn thành công
+                totalRevenue += booking.totalPrice;
+                
+                // Gom nhóm doanh thu cho biểu đồ
+                const bookingDate = new Date(booking.createdAt);
+                let chartKey = '';
+                if (groupByType === 'month') {
+                    chartKey = `T${bookingDate.getMonth() + 1}`;
+                } else {
+                    chartKey = bookingDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                }
+
+                if (chartMap[chartKey] !== undefined) {
+                    chartMap[chartKey] += booking.totalPrice;
+                }
             } else if (booking.status === 'Đã hủy') {
                 cancelledCount++;
             } else if (booking.status === 'Chờ xác nhận') {
                 pendingCount++;
             }
 
-            // Gom nhóm theo loại phòng (chỉ tính đơn thành công cho doanh thu)
+            // Gom nhóm theo loại phòng
             if (booking.room) {
                 const rType = booking.room.roomType;
                 if (!roomStatsMap[rType]) {
                     roomStatsMap[rType] = { count: 0, revenue: 0, capacitySold: 0 };
                 }
                 
-                // Đếm tất cả lượt bán phòng (không phân biệt trạng thái để tính tổng số lượng bán, nhưng doanh thu chỉ tính đơn thành công)
-                if (['Đã xác nhận', 'Đang lưu trú', 'Đã trả phòng'].includes(booking.status)) {
+                if (isSuccess) {
                     roomStatsMap[rType].count += 1;
                     roomStatsMap[rType].revenue += booking.totalPrice;
-                    roomStatsMap[rType].capacitySold += booking.guests; // Tạm dùng số khách để tính hiệu suất
+                    roomStatsMap[rType].capacitySold += booking.guests;
                 }
             }
         });
 
-        // Tính ADR = Tổng Doanh Thu / Tổng số lượng phòng bán được (thành công)
-        let totalSuccessfulBookings = successCount;
-        const adr = totalSuccessfulBookings > 0 ? totalRevenue / totalSuccessfulBookings : 0;
+        // Tính ADR
+        const adr = successCount > 0 ? totalRevenue / successCount : 0;
 
         // Chuyển roomStatsMap thành array
         const roomStats = Object.keys(roomStatsMap).map(key => {
@@ -64,38 +119,17 @@ const getRevenueReport = async (req, res) => {
             return {
                 roomType: key,
                 sold: data.count,
-                capacity: data.capacitySold, // Thực ra đây là số khách, công suất chuẩn khó tính hơn do không có tổng số ngày
+                capacity: data.capacitySold,
                 avgPrice: data.count > 0 ? data.revenue / data.count : 0,
                 totalRevenue: data.revenue
             };
-        }).sort((a, b) => b.totalRevenue - a.totalRevenue); // Sắp xếp theo doanh thu giảm dần
+        }).sort((a, b) => b.totalRevenue - a.totalRevenue);
 
-        // 2. Dữ liệu cho biểu đồ 12 tháng của NĂM
-        const startOfYear = new Date(queryYear, 0, 1);
-        const endOfYear = new Date(queryYear, 11, 31, 23, 59, 59, 999);
-
-        const yearlyRevenueAggr = await Booking.aggregate([
-            { 
-                $match: { 
-                    status: { $in: ['Đã xác nhận', 'Đang lưu trú', 'Đã trả phòng'] },
-                    createdAt: { $gte: startOfYear, $lte: endOfYear }
-                } 
-            },
-            {
-                $group: {
-                    _id: { month: { $month: "$createdAt" } },
-                    monthlyTotal: { $sum: "$totalPrice" }
-                }
-            }
-        ]);
-
-        const monthlyRevenueChart = Array.from({ length: 12 }, (_, i) => {
-            const monthAggr = yearlyRevenueAggr.find(a => a._id.month === i + 1);
-            return {
-                name: `T${i + 1}`,
-                revenue: monthAggr ? monthAggr.monthlyTotal : 0
-            };
-        });
+        // Chuyển chartMap thành array
+        const revenueChart = Object.keys(chartMap).map(key => ({
+            name: key,
+            revenue: chartMap[key]
+        }));
 
         res.status(200).json({
             kpis: {
@@ -103,7 +137,7 @@ const getRevenueReport = async (req, res) => {
                 totalBookings: totalBookingsCount,
                 adr
             },
-            monthlyRevenueChart,
+            revenueChart,
             bookingRatio: {
                 total: totalBookingsCount,
                 success: successCount,
